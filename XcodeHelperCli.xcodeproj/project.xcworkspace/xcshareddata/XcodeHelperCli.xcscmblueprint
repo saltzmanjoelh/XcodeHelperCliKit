@@ -1,0 +1,44 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "E5038C5E7FE95D2C602B24CD8C93C463E474502D",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "E5038C5E7FE95D2C602B24CD8C93C463E474502D" : 9223372036854775807,
+    "0F7D5BBEF9D6E958D4C4AF4992E7F4951DD56098" : 9223372036854775807,
+    "BFE10827E65A85152FA06B4CF740BEA79F236E37" : 9223372036854775807,
+    "A4CF843211A6CB07022610207717040189D54B41" : 9223372036854775807
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "47A42206-7777-4187-A18D-BAEBE35D832E",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "E5038C5E7FE95D2C602B24CD8C93C463E474502D" : "XcodeHelperCli\/",
+    "0F7D5BBEF9D6E958D4C4AF4992E7F4951DD56098" : "XcodeHelperCli\/Packages\/DockerProcess-1.0.8\/",
+    "BFE10827E65A85152FA06B4CF740BEA79F236E37" : "XcodeHelperCli\/Packages\/CliRunnable-1.0.20\/",
+    "A4CF843211A6CB07022610207717040189D54B41" : "XcodeHelperCli\/Packages\/XcodeHelperKit-1.0.12\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "XcodeHelperCli",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "XcodeHelperCli.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/saltzmanjoelh\/DockerProcess.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "0F7D5BBEF9D6E958D4C4AF4992E7F4951DD56098"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/saltzmanjoelh\/XcodeHelperKit.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "A4CF843211A6CB07022610207717040189D54B41"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/saltzmanjoelh\/CliRunnable.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "BFE10827E65A85152FA06B4CF740BEA79F236E37"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/saltzmanjoelh\/XcodeHelperCli.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "E5038C5E7FE95D2C602B24CD8C93C463E474502D"
+    }
+  ]
+}

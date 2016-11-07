@@ -1,4 +1,4 @@
-XcodeHelper keeps you in Xcode and off the command line. You can:
+XcodeHelperCli keeps you in Xcode and off the command line. It's build from [XcodeHelperKit](https://www.github.com/saltzmanjoelh/XcodeHelperKit). You can:
 
 * [Build and run tests on Linux through Docker](#build)
 * [Fetch/Update Swift packages](#fetch)
@@ -7,7 +7,7 @@ XcodeHelper keeps you in Xcode and off the command line. You can:
 
 Combining all these features gives Xcode and Xcode Server the ability to handle the continuous integration and delivery for both macOS and Linux (via Docker) so that we don't have to use an intermediary build server like Jenkins. 
 
-There is a sample project available to see the full configuration.
+There is an [example project](https://www.github.com/saltzmanjoelh/XcodeHelperExample) available to see the full configuration.
 
 ## Build and run tests on Linux through Docker
 Build a Swift package in Linux and have the build errors appear in Xcode.

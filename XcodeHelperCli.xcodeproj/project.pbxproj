@@ -359,13 +359,13 @@
 			path = "Packages/XcodeHelperKit-1.0.14/Sources";
 			sourceTree = SOURCE_ROOT;
 		};
-		OBJ_24 /* XcodeHelperCli */ = {
+		OBJ_24 /* xchelper */ = {
 			isa = PBXGroup;
 			children = (
 				OBJ_25 /* main.swift */,
 			);
-			name = XcodeHelperCli;
-			path = Sources/XcodeHelperCli;
+			name = xchelper;
+			path = Sources/xchelper;
 			sourceTree = SOURCE_ROOT;
 		};
 		OBJ_26 /* XcodeHelperCliKit */ = {
@@ -409,7 +409,7 @@
 			name = Products;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		OBJ_5 /*  */ = {
+		OBJ_5 = {
 			isa = PBXGroup;
 			children = (
 				OBJ_6 /* Package.swift */,
@@ -417,7 +417,6 @@
 				OBJ_28 /* Tests */,
 				OBJ_31 /* Products */,
 			);
-			name = "";
 			sourceTree = "<group>";
 		};
 		OBJ_7 /* Sources */ = {
@@ -428,7 +427,7 @@
 				OBJ_14 /* DockerProcess */,
 				OBJ_18 /* S3Kit */,
 				OBJ_22 /* XcodeHelperKit */,
-				OBJ_24 /* XcodeHelperCli */,
+				OBJ_24 /* xchelper */,
 				OBJ_26 /* XcodeHelperCliKit */,
 			);
 			path = Sources;
@@ -614,7 +613,7 @@
 			knownRegions = (
 				en,
 			);
-			mainGroup = OBJ_5 /*  */;
+			mainGroup = OBJ_5;
 			productRefGroup = OBJ_31 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";

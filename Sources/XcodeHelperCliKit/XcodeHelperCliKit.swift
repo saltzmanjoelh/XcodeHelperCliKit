@@ -10,9 +10,6 @@ import Foundation
 import XcodeHelperKit
 import CliRunnable
 
-//look at the bottom for code that is executed
-
-
 // MARK: Cli Options
 extension XcodeHelper: CliRunnable {
     public var appName: String {
@@ -335,7 +332,3 @@ extension XcodeHelper: CliRunnable {
         
     }
 }
-
-
-let helper = XcodeHelper()
-try helper.run(arguments:ProcessInfo.processInfo.arguments, environment:ProcessInfo.processInfo.environment)

@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "OBJ_86"
+               BlueprintIdentifier = "OBJ_91"
                BuildableName = "XcodeHelperCli"
                BlueprintName = "XcodeHelperCli"
                ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -32,7 +32,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "OBJ_86"
+            BlueprintIdentifier = "OBJ_91"
             BuildableName = "XcodeHelperCli"
             BlueprintName = "XcodeHelperCli"
             ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -55,7 +55,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "OBJ_86"
+            BlueprintIdentifier = "OBJ_91"
             BuildableName = "XcodeHelperCli"
             BlueprintName = "XcodeHelperCli"
             ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -74,7 +74,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "OBJ_86"
+            BlueprintIdentifier = "OBJ_91"
             BuildableName = "XcodeHelperCli"
             BlueprintName = "XcodeHelperCli"
             ReferencedContainer = "container:XcodeHelperCli.xcodeproj">

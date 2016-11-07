@@ -9,15 +9,45 @@
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
+		<key>XcodeHelperCli.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>0</integer>
+		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
-		<key>OBJ_35</key>
+		<key>OBJ_110</key>
 		<dict>
 			<key>primary</key>
 			<true/>
 		</dict>
-		<key>OBJ_44</key>
+		<key>OBJ_112</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>OBJ_127</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>OBJ_129</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>OBJ_40</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>OBJ_42</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>OBJ_49</key>
 		<dict>
 			<key>primary</key>
 			<true/>
@@ -27,17 +57,42 @@
 			<key>primary</key>
 			<true/>
 		</dict>
-		<key>OBJ_62</key>
+		<key>OBJ_56</key>
 		<dict>
 			<key>primary</key>
 			<true/>
 		</dict>
-		<key>OBJ_71</key>
+		<key>OBJ_58</key>
 		<dict>
 			<key>primary</key>
 			<true/>
 		</dict>
-		<key>OBJ_86</key>
+		<key>OBJ_67</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>OBJ_69</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>OBJ_76</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>OBJ_78</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>OBJ_91</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>OBJ_93</key>
 		<dict>
 			<key>primary</key>
 			<true/>

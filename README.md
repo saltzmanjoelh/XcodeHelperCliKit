@@ -1,5 +1,5 @@
 XcodeHelperCli keeps you in Xcode and off the command line. It's build from [XcodeHelperKit](https://www.github.com/saltzmanjoelh/XcodeHelperKit). You can:
-- [Migration Guides](#migration-guides)
+
 - [Build and run tests on Linux through Docker](#build)
 - [Fetch/Update Swift packages](#fetch)
 - [Keep your "Dependencies" group in Xcode referencing the correct paths](#symlink)
@@ -25,7 +25,8 @@ Option  | Description
 
 
 Create a new External Build target in Xcode. 
-<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build1.png?raw=true" height="400">
+![build1](/../ReadmeAssets/master/XcodeHelperCli/build1.png)
+<img src="raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build1.png?raw=true" height="400">
 <img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build2.png?raw=true" height="400">
 
 
@@ -47,4 +48,4 @@ Instead of going to the command line to update dependencies
 
 You can also have xchelper archive your built linux binary into a tar file and upload to S3. 
 
-- [Migration Guides](#migration-guides)
+

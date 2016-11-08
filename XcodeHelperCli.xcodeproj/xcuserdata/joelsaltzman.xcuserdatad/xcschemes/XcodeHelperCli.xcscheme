@@ -64,6 +64,10 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "update-packages /Users/joelsaltzman/Sites/XcodeHelper/XcodeHelperExample"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "sym-link-dependencies /Users/joelsaltzman/Sites/XcodeHelper/XcodeHelperExample"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

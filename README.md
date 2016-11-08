@@ -2,7 +2,7 @@ XcodeHelperCli keeps you in Xcode and off the command line. It's build from [Xco
 
 - [Build and run tests on Linux through Docker](#build-and-run-tests-on-linux-through-docker)
 - [Keep your "Dependencies" group in Xcode referencing the correct paths](#keep-your-dependencies-group-in-xcode-referencing-the-correct-paths)
-- [Tar and upload you Linux binary to AWS S3 buckets.](#archive)
+- [Tar and upload you Linux binary to AWS S3 buckets.](#tar-and-upload-you-linux-binary-to-aws-s3-buckets)
 
 Combining all these features gives Xcode and Xcode Server the ability to handle the continuous integration and delivery for both macOS and Linux (via Docker) so that we don't have to use an intermediary build server like Jenkins. 
 
@@ -40,9 +40,10 @@ Here is an example of all of the `build` options
 
 
 ##Keep your "Dependencies" group in Xcode referencing the correct paths
-When you need to update your package dependencies, you have to call `swift package update`. This breaks your project and now you have to call `swift package generate-xcodeproj` again or update your references in your project. 
+When you need to update your package dependencies, you have to call `swift package update`. This breaks your project and now you have to call `swift package generate-xcodeproj` again or update your references in your project. There are 2 commands (`update-packages` and `sym-link-dependencies`) that help with this process.<br/>
 
-The `update-packages` command will create symbolic links to your dependencies and it will update your Xcode Project to use those sym links instead of the directories with version number suffixes.
+------
+The `update-packages` command will download any updates to your dependencies via `swift package update`
 
 ```
 xchelper update-packages SOURCE_CODE_PATH [OPTIONS]
@@ -55,12 +56,31 @@ Option  | Description
 `-i`, `--image-name` or env var `UPDATE_PACKAGES_DOCKER_IMAGE_NAME`| The Docker image name to run the commands in. Defaults to saltzmanjoelh/swiftubuntu.    
 
 
+------
+
+`sym-link-dependencies` create symbolic links to your dependencies and it will update your Xcode Project to use those sym links instead of the directories with version number suffixes.
+
+```
+xchelper sym-link-dependencies SOURCE_CODE_PATH
+```
+`SOURCE_CODE_PATH` is the root of your package to call `swift package update` in. There are no options for this command.
+
+
+------
+
+Here is an example of updating your packages, creating/updating your sym links to those packages and having Xcode updated to use those sym links. 
+
+<img src="https://cloud.githubusercontent.com/assets/1833492/20121590/496c331c-a5c7-11e6-8401-9fe6e055de73.png" width="600"><br/>
+
+Please note the use of `xcrun`. You can use this if you get any errors like `cannot load underlying module for 'Darwin'` or `did you forget to set an SDK using -sdk or SDKROOT?`<br/>
 
 
 
 
 ##Tar and upload you Linux binary to AWS S3 buckets.
 
-You can also have xchelper archive your built linux binary into a tar file and upload to S3. 
+There are 2 commands (`create-archive` and `upload-archive`) to help get your files to an S3 bucket. You might use this if you are using CodeDeploy or something similar to monitor an S3 bucket for continuous integration.
+
+
 
 

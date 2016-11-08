@@ -25,17 +25,16 @@ Option  | Description
 
 
 Create a new External Build target in Xcode. 
-![build1](/../ReadmeAssets/master/XcodeHelperCli/build1.png)
-<img src="raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build1.png?raw=true" height="400">
-<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build2.png?raw=true" height="400">
+<img src="raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build1.png" height="400">
+<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build2.png" height="400">
 
 
 Arguments are /path/to/xchelper build $\(PROJECT_DIR\)]
-<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build3.png?raw=true" width="600">
+<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build3.png" width="600">
 
 
 Here is an example of all of the build options
-<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/buildfull.png?raw=true" width="600">
+<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/buildfull.png" width="600">
 
 
 

@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "OBJ_91"
-               BuildableName = "XcodeHelperCli"
-               BlueprintName = "XcodeHelperCli"
+               BuildableName = "xchelper"
+               BlueprintName = "xchelper"
                ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -33,8 +33,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "OBJ_91"
-            BuildableName = "XcodeHelperCli"
-            BlueprintName = "XcodeHelperCli"
+            BuildableName = "xchelper"
+            BlueprintName = "xchelper"
             ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -56,8 +56,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "OBJ_91"
-            BuildableName = "XcodeHelperCli"
-            BlueprintName = "XcodeHelperCli"
+            BuildableName = "xchelper"
+            BlueprintName = "xchelper"
             ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -75,8 +75,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "OBJ_91"
-            BuildableName = "XcodeHelperCli"
-            BlueprintName = "XcodeHelperCli"
+            BuildableName = "xchelper"
+            BlueprintName = "xchelper"
             ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

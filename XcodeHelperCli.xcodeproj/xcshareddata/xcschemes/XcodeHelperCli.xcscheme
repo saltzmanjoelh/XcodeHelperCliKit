@@ -85,8 +85,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "OBJ_91"
-               BuildableName = "XcodeHelperCli"
-               BlueprintName = "XcodeHelperCli"
+               BuildableName = "xchelper"
+               BlueprintName = "xchelper"
                ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

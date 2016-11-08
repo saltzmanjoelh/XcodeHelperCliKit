@@ -25,17 +25,19 @@ Option  | Description
 
 
 Create a new External Build target in Xcode. 
-<img src="raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build1.png" height="400">
-<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build2.png" height="400">
+<img src="https://cloud.githubusercontent.com/assets/1833492/20109936/1fd5bb8e-a597-11e6-9542-5ea82bc56534.png" height="400">
+<img src="https://cloud.githubusercontent.com/assets/1833492/20109938/1fd6e202-a597-11e6-9f30-028d490aeb29.png" height="400">
 
 
 Arguments are /path/to/xchelper build $\(PROJECT_DIR\)]
-<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build3.png" width="600">
+<img src="https://cloud.githubusercontent.com/assets/1833492/20109937/1fd5d286-a597-11e6-9eab-fdb38f4bb47f.png" width="600">
 
 
-Here is an example of all of the build options
-<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/buildfull.png" width="600">
+------
+Here is an example of all of the `build` options
+<img src="https://cloud.githubusercontent.com/assets/1833492/20109939/1fd6f4a4-a597-11e6-9d73-eb205120e620.png" width="600">
 
+------
 
 
 ##Fetch/Update Swift packages

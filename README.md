@@ -1,7 +1,7 @@
 XcodeHelperCli keeps you in Xcode and off the command line. It's build from [XcodeHelperKit](https://www.github.com/saltzmanjoelh/XcodeHelperKit). You can:
 
-- [Build and run tests on Linux through Docker](#build)
-- [Keep your "Dependencies" group in Xcode referencing the correct paths](#symlink)
+- [Build and run tests on Linux through Docker](#build-and-run-tests-on-linux-through-docker)
+- [Keep your "Dependencies" group in Xcode referencing the correct paths](#keep-your-dependencies-group-in-xcode-referencing-the-correct-paths)
 - [Tar and upload you Linux binary to AWS S3 buckets.](#archive)
 
 Combining all these features gives Xcode and Xcode Server the ability to handle the continuous integration and delivery for both macOS and Linux (via Docker) so that we don't have to use an intermediary build server like Jenkins. 

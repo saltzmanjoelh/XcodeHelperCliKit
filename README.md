@@ -25,16 +25,16 @@ Option  | Description
 
 
 Create a new External Build target in Xcode. 
-<img src="http://www.github.com/saltzmanjoelh/ReadmeAssets/blob/master/XcodeHelperCli/build1.png?raw=true" height="400">
-<img src="http://www.github.com/saltzmanjoelh/ReadmeAssets/blob/master/XcodeHelperCli/build2.png?raw=true" height="400">
+<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build1.png?raw=true" height="400">
+<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build2.png?raw=true" height="400">
 
 
 Arguments are /path/to/xchelper build $\(PROJECT_DIR\)]
-<img src="http://www.github.com/saltzmanjoelh/ReadmeAssets/blob/master/XcodeHelperCli/build3.png?raw=true" width="600">
+<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/build3.png?raw=true" width="600">
 
 
 Here is an example of all of the build options
-<img src="http://www.github.com/saltzmanjoelh/ReadmeAssets/blob/master/XcodeHelperCli/buildfull.png?raw=true" width="600">
+<img src="http://raw.githubusercontent.com/saltzmanjoelh/ReadmeAssets/master/XcodeHelperCli/buildfull.png?raw=true" width="600">
 
 
 
@@ -45,5 +45,5 @@ Instead of going to the command line to update dependencies
 
 ##Tar and upload you Linux binary to AWS S3 buckets.
 
-You can also have xchelper archive your project into a tar file and upload to S3. 
+You can also have xchelper archive your built linux binary into a tar file and upload to S3. 
 

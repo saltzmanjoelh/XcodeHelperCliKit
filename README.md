@@ -24,13 +24,13 @@ Option  | Description
 `-i`, `--image-name` or env var `BUILD_DOCKER_IMAGE_NAME`| The Docker image name to run the commands in. Defaults to saltzmanjoelh/swiftubuntu                
 
 
-Create a new External Build target in Xcode. 
-<img src="https://cloud.githubusercontent.com/assets/1833492/20109936/1fd5bb8e-a597-11e6-9542-5ea82bc56534.png" height="400">
-<img src="https://cloud.githubusercontent.com/assets/1833492/20109938/1fd6e202-a597-11e6-9f30-028d490aeb29.png" height="400">
+Create a new External Build target in Xcode.<br/>
+<img src="https://cloud.githubusercontent.com/assets/1833492/20109936/1fd5bb8e-a597-11e6-9542-5ea82bc56534.png" height="400"><br/>
+<img src="https://cloud.githubusercontent.com/assets/1833492/20109938/1fd6e202-a597-11e6-9f30-028d490aeb29.png" height="400"><br/>
 
 
-Arguments are /path/to/xchelper build $\(PROJECT_DIR\)]
-<img src="https://cloud.githubusercontent.com/assets/1833492/20109937/1fd5d286-a597-11e6-9eab-fdb38f4bb47f.png" width="600">
+Arguments are /path/to/xchelper build $\(PROJECT_DIR\)]<br/>
+<img src="https://cloud.githubusercontent.com/assets/1833492/20109937/1fd5d286-a597-11e6-9eab-fdb38f4bb47f.png" width="600"><br/>
 
 
 ------

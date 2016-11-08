@@ -1,7 +1,6 @@
 XcodeHelperCli keeps you in Xcode and off the command line. It's build from [XcodeHelperKit](https://www.github.com/saltzmanjoelh/XcodeHelperKit). You can:
 
 - [Build and run tests on Linux through Docker](#build)
-- [Fetch/Update Swift packages](#fetch)
 - [Keep your "Dependencies" group in Xcode referencing the correct paths](#symlink)
 - [Tar and upload you Linux binary to AWS S3 buckets.](#archive)
 
@@ -40,10 +39,25 @@ Here is an example of all of the `build` options
 ------
 
 
-##Fetch/Update Swift packages
-Instead of going to the command line to update dependencies
-
 ##Keep your "Dependencies" group in Xcode referencing the correct paths
+When you need to update your package dependencies, you have to call `swift package update`. This breaks your project and now you have to call `swift package generate-xcodeproj` again or update your references in your project. 
+
+The `update-packages` command will create symbolic links to your dependencies and it will update your Xcode Project to use those sym links instead of the directories with version number suffixes.
+
+```
+xchelper update-packages SOURCE_CODE_PATH [OPTIONS]
+```
+`SOURCE_CODE_PATH` is the root of your package to call `swift package update` in.
+
+Option  | Description
+------------- | ------------- 
+`-l`, `----linux-packages` or env var `UPDATE_PACKAGES_LINUX_PACKAGES`| Some packages have Linux specific dependencies. Use this option to update the Linux version of the packages. Linux packages may not be compatible with the macOS dependencies. `swift build --clean` is performed before they are updated. Defaults to: false    
+`-i`, `--image-name` or env var `UPDATE_PACKAGES_DOCKER_IMAGE_NAME`| The Docker image name to run the commands in. Defaults to saltzmanjoelh/swiftubuntu.    
+
+
+
+
+
 
 ##Tar and upload you Linux binary to AWS S3 buckets.
 

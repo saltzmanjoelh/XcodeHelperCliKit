@@ -98,17 +98,17 @@ extension XcodeHelper: CliRunnable {
     // MARK: UpdatePackages
     struct UpdatePackages {
         static let command          = CliOption(keys: ["update-packages", "UPDATE_PACKAGES"],
-                                                description: "Update the package dependencies via 'swift package update'.",
+                                                description: "Update the package dependencies via 'swift package update' without breaking your file references in Xcode.",
                                                 usage: "xchelper update-packages SOURCE_CODE_PATH [OPTIONS]. SOURCE_CODE_PATH is the root of your package to call 'swift package update' in.",
                                                 requiresValue: true,
                                                 defaultValue:nil)
         static let linuxPackages    = CliOption(keys:["-l", "--linux-packages", "UPDATE_PACKAGES_LINUX_PACKAGES"],
-                                                description:"Update the Linux version of the packages. Some packages have Linux specific dependencies which may not be compatible with the macOS dependencies. `swift build --clean` is performed before they are updateed.",
+                                                description:"Some packages have Linux specific dependencies. Use this option to update the Linux version of the packages. Linux packages may not be compatible with the macOS dependencies. `swift build --clean` is performed before they are updated",
                                                 usage: nil,
                                                 requiresValue:true,
                                                 defaultValue:"false")
         static let imageName        = CliOption(keys:["-i", "--image-name", "UPDATE_PACKAGES_DOCKER_IMAGE_NAME"],
-                                                description:"The Docker image name to run the commands in.",
+                                                description:"The Docker image name to run the commands in",
                                                 usage: nil,
                                                 requiresValue:true,
                                                 defaultValue:"saltzmanjoelh/swiftubuntu")

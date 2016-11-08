@@ -61,6 +61,12 @@
             ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "update-packages /Users/joelsaltzman/Sites/XcodeHelper/XcodeHelperExample"
+            isEnabled = "YES">
+         </CommandLineArgument>
+      </CommandLineArguments>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>

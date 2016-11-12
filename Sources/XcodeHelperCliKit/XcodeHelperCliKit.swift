@@ -180,9 +180,9 @@ extension XcodeHelper: CliRunnable {
     
     // MARK: SymLinkDependencies
     struct SymLinkDependencies {
-        static let command              = CliOption(keys: ["sym-link-dependencies", "SYM_LINK_DEPENDENCIES"],
+        static let command              = CliOption(keys: ["symlink-dependencies", "SYMLINK_DEPENDENCIES"],
                                                     description: "Create symbolic links for Xcode 'Dependencies' after `swift package update` so you don't have to generate a new xcode project.",
-                                                    usage: "xchelper sym-link-dependencies SOURCE_CODE_PATH [OPTIONS]. SOURCE_CODE_PATH is the root of your package to call 'swift build' in.",
+                                                    usage: "xchelper symlink-dependencies SOURCE_CODE_PATH [OPTIONS]. SOURCE_CODE_PATH is the root of your package to call 'swift build' in.",
                                                     requiresValue: true,
                                                     defaultValue:nil)
     }

@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "OBJ_40"
+               BlueprintIdentifier = "OBJ_38"
                BuildableName = "CliRunnable.framework"
                BlueprintName = "CliRunnable"
                ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -28,7 +28,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "OBJ_49"
+               BlueprintIdentifier = "OBJ_47"
                BuildableName = "SynchronousProcess.framework"
                BlueprintName = "SynchronousProcess"
                ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -42,7 +42,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "OBJ_56"
+               BlueprintIdentifier = "OBJ_54"
                BuildableName = "DockerProcess.framework"
                BlueprintName = "DockerProcess"
                ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -56,7 +56,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "OBJ_67"
+               BlueprintIdentifier = "OBJ_63"
                BuildableName = "S3Kit.framework"
                BlueprintName = "S3Kit"
                ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -70,7 +70,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "OBJ_76"
+               BlueprintIdentifier = "OBJ_72"
                BuildableName = "XcodeHelperKit.framework"
                BlueprintName = "XcodeHelperKit"
                ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -84,7 +84,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "OBJ_91"
+               BlueprintIdentifier = "OBJ_87"
                BuildableName = "xchelper"
                BlueprintName = "xchelper"
                ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -98,7 +98,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "OBJ_110"
+               BlueprintIdentifier = "OBJ_106"
                BuildableName = "XcodeHelperCliKit.framework"
                BlueprintName = "XcodeHelperCliKit"
                ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -116,7 +116,7 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "OBJ_127"
+               BlueprintIdentifier = "OBJ_123"
                BuildableName = "XcodeHelperCliTests.xctest"
                BlueprintName = "XcodeHelperCliTests"
                ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -139,7 +139,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "OBJ_40"
+            BlueprintIdentifier = "OBJ_38"
             BuildableName = "CliRunnable.framework"
             BlueprintName = "CliRunnable"
             ReferencedContainer = "container:XcodeHelperCli.xcodeproj">

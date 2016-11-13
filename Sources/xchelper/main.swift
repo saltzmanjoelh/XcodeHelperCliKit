@@ -16,6 +16,10 @@ do {
     try helper.run(arguments:ProcessInfo.processInfo.arguments, environment:ProcessInfo.processInfo.environment)
 } catch let e as XcodeHelperError {
     print(e.description)
+    if case XcodeHelperError.build(let buildError) = e {
+        exit(buildError.exitCode)
+    }
+    
 } catch let e as CliRunnableError {
     print(e.description)
 }

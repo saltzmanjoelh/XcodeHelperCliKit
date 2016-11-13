@@ -33,13 +33,18 @@ Option  | Description
 `-i`, `--image-name` or env var `BUILD_DOCKER_IMAGE_NAME`| The Docker image name to run the commands in. Defaults to saltzmanjoelh/swiftubuntu                
 
 
-Create a new External Build target in Xcode.<br/>
+#####You can add a new Run Script Build Phase to your target<br/>
+<img src="https://cloud.githubusercontent.com/assets/1833492/20236478/4fc99776-a86b-11e6-9b80-81e876b8f6f4.png" height="400"><br/>
+
+#####Or add a separate External Build target and manually switch between macOS build and Linux build
+
+1. Create a new External Build target in Xcode.<br/>
 <img src="https://cloud.githubusercontent.com/assets/1833492/20109936/1fd5bb8e-a597-11e6-9542-5ea82bc56534.png" height="400"><br/>
 <img src="https://cloud.githubusercontent.com/assets/1833492/20109938/1fd6e202-a597-11e6-9f30-028d490aeb29.png" height="400"><br/>
 
 
-Arguments are `/path/to/xchelper build $(PROJECT_DIR)`<br/>
-<img src="https://cloud.githubusercontent.com/assets/1833492/20109937/1fd5d286-a597-11e6-9eab-fdb38f4bb47f.png" width="600"><br/>
+2. Arguments are `/path/to/xchelper build $(PROJECT_DIR)`<br/>
+<img src="https://cloud.githubusercontent.com/assets/1833492/20236500/c77192f6-a86b-11e6-8298-1ebf00810d29.png" width="600"><br/>
 
 
 ##update-packages
@@ -51,7 +56,7 @@ xchelper update-packages SOURCE_CODE_PATH [OPTIONS]
 
 Option  | Description
 ------------- | ------------- 
-`update-packages`, or env var `UPDATE_PACKAGES` | Update the package dependencies via 'swift package update'. *SOURCE\_CODE\_PATH* is the root of your package to call `swift package update` in.
+`update-packages`, or env var `UPDATE_PACKAGES` | Update the package dependencies via `swift package update`. *SOURCE\_CODE\_PATH* is the root of your package to call `swift package update` in.
 `-l`, `----linux-packages` or env var `UPDATE_PACKAGES_LINUX_PACKAGES`| Some packages have Linux specific dependencies. Use this option to update the Linux version of the packages. Linux packages may not be compatible with the macOS dependencies. `swift build --clean` is performed before they are updated. Defaults to: false    
 `-i`, `--image-name` or env var `UPDATE_PACKAGES_DOCKER_IMAGE_NAME`| The Docker image name to run the commands in. Defaults to saltzmanjoelh/swiftubuntu.    
 
@@ -102,7 +107,7 @@ There is an [example project](https://www.github.com/saltzmanjoelh/XcodeHelperEx
 ## Build and run tests on Linux through Docker
 
 Here is an example of all of the `xchelper build` options
-<img src="https://cloud.githubusercontent.com/assets/1833492/20109939/1fd6f4a4-a597-11e6-9d73-eb205120e620.png" width="600">
+<img src="https://cloud.githubusercontent.com/assets/1833492/20236466/f9aec168-a86a-11e6-9923-20d1c772b396.png" width="600">
 
 ------
 
@@ -113,7 +118,7 @@ When you need to update your package dependencies, you have to call `swift packa
 
 Here is an example of updating your packages, creating/updating your symlinks to those packages and having Xcode updated to use those symlinks. 
 
-<img src="https://cloud.githubusercontent.com/assets/1833492/20121590/496c331c-a5c7-11e6-8401-9fe6e055de73.png" width="600"><br/>
+<img src="https://cloud.githubusercontent.com/assets/1833492/20236541/1ded3c42-a86d-11e6-8690-b743bb938164.png" width="600"><br/>
 
 Please note the use of `xcrun`. You can use this if you get any errors like `cannot load underlying module for 'Darwin'` or `did you forget to set an SDK using -sdk or SDKROOT?`<br/>
 

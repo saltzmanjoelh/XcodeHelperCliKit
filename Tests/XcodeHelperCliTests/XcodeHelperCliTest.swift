@@ -8,7 +8,7 @@
 
 import XCTest
 import XcodeHelperKit
-import XcodeHelperCli
+import XcodeHelperCliKit
 
 class XcodeHelperCliTests: XCTestCase {
     

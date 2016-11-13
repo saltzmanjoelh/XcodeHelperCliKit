@@ -149,15 +149,15 @@ extension XcodeHelper: CliRunnable {
     public func handleBuild(option:CliOption) throws {
         let index = option.argumentIndex
         guard let sourcePath = index[Build.command.keys.first!]?.first else {
-            throw XcodeHelperError.build(message: "SOURCE_CODE_PATH was not provided.")
+            throw XcodeHelperError.build(message: "SOURCE_CODE_PATH was not provided.", exitCode: 1)
         }
         guard let buildConfigurationString = index[Build.buildConfiguration.keys.first!]?.first else {
-            throw XcodeHelperError.build(message: "\(Build.buildConfiguration.keys) not provided.")
+            throw XcodeHelperError.build(message: "\(Build.buildConfiguration.keys) not provided.", exitCode: 1)
         }
         let buildConfiguration = BuildConfiguration(from:buildConfigurationString)
         
         guard let imageName = index[Build.imageName.keys.first!]?.first else {
-            throw XcodeHelperError.build(message: "\(Build.imageName.keys) not provided.")
+            throw XcodeHelperError.build(message: "\(Build.imageName.keys) not provided.", exitCode: 1)
         }
         try build(source: sourcePath, usingConfiguration: buildConfiguration, inDockerImage: imageName)
     }

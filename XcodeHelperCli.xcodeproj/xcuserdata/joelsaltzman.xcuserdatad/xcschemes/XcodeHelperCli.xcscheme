@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "OBJ_91"
+               BlueprintIdentifier = "OBJ_87"
                BuildableName = "xchelper"
                BlueprintName = "xchelper"
                ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -32,7 +32,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "OBJ_91"
+            BlueprintIdentifier = "OBJ_87"
             BuildableName = "xchelper"
             BlueprintName = "xchelper"
             ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -55,7 +55,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "OBJ_91"
+            BlueprintIdentifier = "OBJ_87"
             BuildableName = "xchelper"
             BlueprintName = "xchelper"
             ReferencedContainer = "container:XcodeHelperCli.xcodeproj">
@@ -84,7 +84,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "OBJ_91"
+            BlueprintIdentifier = "OBJ_87"
             BuildableName = "xchelper"
             BlueprintName = "xchelper"
             ReferencedContainer = "container:XcodeHelperCli.xcodeproj">

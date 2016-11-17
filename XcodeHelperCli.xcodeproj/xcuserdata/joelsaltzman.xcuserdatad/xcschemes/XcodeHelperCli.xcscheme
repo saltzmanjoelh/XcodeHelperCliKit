@@ -67,7 +67,15 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "sym-link-dependencies /Users/joelsaltzman/Sites/XcodeHelper/XcodeHelperExample"
+            argument = "symlink-dependencies /Users/joelsaltzman/Sites/XcodeHelper/XcodeHelperExample"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "create-xcarchive-plist &quot;/Users/joelsaltzman/Library/Developer/Xcode/Archives/2016-11-13/xchelper-XcodeHelperExample 11-13-2016, 12.13.33 AM.xcarchive&quot; --name helperTest -s helperTest"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "fetch-packages"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

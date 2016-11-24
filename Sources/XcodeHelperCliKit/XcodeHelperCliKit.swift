@@ -10,10 +10,14 @@ import Foundation
 import XcodeHelperKit
 import CliRunnable
 
-//TODO: add currentDirectory to handle action?
-
-// MARK: Cli Options
-extension XcodeHelper: CliRunnable {
+public struct XCHelper : CliRunnable {
+    
+    public var xcodeHelpable: XcodeHelpable
+    
+    public init(xcodeHelpable:XcodeHelpable) {
+        self.xcodeHelpable = xcodeHelpable
+    }
+    
     public var appName: String {
         get {
             return "xchelper"
@@ -28,51 +32,43 @@ extension XcodeHelper: CliRunnable {
         return "xchelper COMMAND [OPTIONS]"
     }
     
+    public func parseSourceCodePath(from argumentIndex: [String:[String]], with optionKey: String?) -> String {
+        if let key = optionKey, let customDirectory = argumentIndex[key]?.first {
+            return customDirectory
+        }
+        return FileManager.default.currentDirectoryPath
+    }
+    
     
     public var cliOptionGroups: [CliOptionGroup] {
         get {
-            var fetchPackagesOption = FetchPackages.command
-            fetchPackagesOption.optionalArguments = [FetchPackages.changeDirectory, FetchPackages.linuxPackages, FetchPackages.imageName]
-            fetchPackagesOption.action = handleFetchPackages
-            
-            var updatePackagesOption = UpdatePackages.command
-            updatePackagesOption.optionalArguments = [UpdatePackages.changeDirectory, UpdatePackages.linuxPackages, UpdatePackages.imageName]
-            updatePackagesOption.action = handleUpdatePackages
-            
-            var buildOption = Build.command
-            buildOption.optionalArguments = [Build.changeDirectory, Build.buildConfiguration, Build.imageName]
-            buildOption.action = handleBuild
-            
-            var cleanOption = Clean.command
-            cleanOption.optionalArguments = [Clean.changeDirectory]
-            cleanOption.action = handleClean
-            
-            var symLinkDependenciesOption = SymlinkDependencies.command
-            symLinkDependenciesOption.optionalArguments = [SymlinkDependencies.changeDirectory];
+            var symLinkDependenciesOption = symlinkDependencies.command
+            symLinkDependenciesOption.optionalArguments = [symlinkDependencies.changeDirectory];
             symLinkDependenciesOption.action = handleSymlinkDependencies
             
-            var createArchiveOption = CreateArchive.command
-            createArchiveOption.optionalArguments = [CreateArchive.flatList]
+            var createArchiveOption = createArchive.command
+            createArchiveOption.optionalArguments = [createArchive.flatList]
             createArchiveOption.action = handleCreateArchive
             
-            var uploadArchve = UploadArchive.command
-            uploadArchve.requiredArguments = [UploadArchive.bucket, UploadArchive.region]//(key,secret) OR credentials check in handler
+            var uploadArchve = uploadArchive.command
+            uploadArchve.requiredArguments = [uploadArchive.bucket, uploadArchive.region]//(key,secret) OR credentials check in handler
             
-            var gitTagOption = GitTag.command
-            gitTagOption.optionalArguments = [GitTag.changeDirectory, GitTag.versionOption, GitTag.incrementOption]
+            var gitTagOption = gitTag.command
+            gitTagOption.optionalArguments = [gitTag.changeDirectory, gitTag.versionOption, gitTag.incrementOption, gitTag.pushOption]
             gitTagOption.action = handleGitTag
             
-            var createPlistOption = CreateXcarchive.command
-            createPlistOption.requiredArguments = [CreateXcarchive.nameOption, CreateXcarchive.schemeOption]
-            createPlistOption.action = handleCreateArchive
+            var createXcarchiveOption = createXcarchive.command
+            createXcarchiveOption.requiredArguments = [createXcarchive.nameOption, createXcarchive.schemeOption]
+            createXcarchiveOption.action = handleCreateArchive
             
             return [CliOptionGroup(description:"Commands:",
-                                   options:[fetchPackagesOption, updatePackagesOption, buildOption, cleanOption, symLinkDependenciesOption, createArchiveOption, uploadArchve, gitTagOption, createPlistOption])]
+                                   options:[updatePackagesOption, buildOption, cleanOption, symLinkDependenciesOption, createArchiveOption, uploadArchve, gitTagOption, createXcarchiveOption])]
         }
     }
     
+    /*
     // MARK: FetchPackages
-    struct FetchPackages {
+    struct fetchPackages {
         static let command          = CliOption(keys: ["fetch-packages", "FETCH_PACKAGES"],
                                                 description: "Fetch the package dependencies via 'swift package fetch'.",
                                                 usage: "xchelper fetch-packages [OPTIONS]",
@@ -85,8 +81,8 @@ extension XcodeHelper: CliRunnable {
                                                 defaultValue:nil)
         static let linuxPackages    = CliOption(keys:["-l", "--linux-packages", "FETCH_PACKAGES_LINUX_PACKAGES"],
                                                 description:"Fetch the Linux version of the packages. Some packages have Linux specific dependencies which may not be compatible with the macOS dependencies. `swift build --clean` is performed before they are fetched.",
-                                                usage:nil,
-                                                requiresValue:true,
+                                                usage:"Just provide the one of the keys, no bool value required.",
+                                                requiresValue:false,
                                                 defaultValue:"false")
         static let imageName        = CliOption(keys:["-i", "--image-name", "FETCH_PACKAGES_DOCKER_IMAGE_NAME"],
                                                 description:"The Docker image name to run the commands in.",
@@ -95,25 +91,27 @@ extension XcodeHelper: CliRunnable {
                                                 defaultValue:"saltzmanjoelh/swiftubuntu")
     }
     public func handleFetchPackages(option:CliOption) throws {
-        let index = option.argumentIndex
-        var sourcePath: String?
-        if let customDirectory = index[FetchPackages.changeDirectory.keys.first!]?.first {
-            sourcePath = customDirectory
-        }else{
-            sourcePath = FileManager.default.currentDirectoryPath
+        let argumentIndex = option.argumentIndex
+        let sourcePath = parseSourceCodePath(from: argumentIndex, with: fetchPackages.changeDirectory.keys.first!)
+        var forLinux = false
+        if argumentIndex.index(forKey: updatePackages.linuxPackages.keys.first!) != nil {
+            forLinux = true
         }
-        guard let forLinux = index[FetchPackages.linuxPackages.keys.first!]?.first else {
-            throw XcodeHelperError.fetch(message: "\(FetchPackages.linuxPackages.keys) keys were not provided.")
+        guard let imageName = argumentIndex[fetchPackages.imageName.keys.first!]?.first else {
+            throw XcodeHelperError.fetch(message: "\(fetchPackages.imageName.keys) keys were not provided.")
         }
         
-        guard let imageName = index[FetchPackages.imageName.keys.first!]?.first else {
-            throw XcodeHelperError.fetch(message: "\(FetchPackages.imageName.keys) keys were not provided.")
-        }
-        try fetchPackages(at:sourcePath!, forLinux:(forLinux as NSString).boolValue, inDockerImage: imageName)
+        try xcodeHelpable.fetchPackages(at:sourcePath, forLinux:forLinux, inDockerImage: imageName)
     }
+    public var fetchPackagesOption : CliOption {
+        var fetchPackagesOption = fetchPackages.command
+        fetchPackagesOption.optionalArguments = [fetchPackages.changeDirectory, fetchPackages.linuxPackages, fetchPackages.imageName]
+        fetchPackagesOption.action = handleFetchPackages
+        return fetchPackagesOption
+    }*/
     
     // MARK: UpdatePackages
-    struct UpdatePackages {
+    struct updatePackages {
         static let command          = CliOption(keys: ["update-packages", "UPDATE_PACKAGES"],
                                                 description: "Update the package dependencies via 'swift package update' without breaking your file references in Xcode.",
                                                 usage: "xchelper update-packages [OPTIONS]",
@@ -126,8 +124,8 @@ extension XcodeHelper: CliRunnable {
                                                 defaultValue:nil)
         static let linuxPackages    = CliOption(keys:["-l", "--linux-packages", "UPDATE_PACKAGES_LINUX_PACKAGES"],
                                                 description:"Some packages have Linux specific dependencies. Use this option to update the Linux version of the packages. Linux packages may not be compatible with the macOS dependencies. `swift build --clean` is performed before they are updated",
-                                                usage: nil,
-                                                requiresValue:true,
+                                                usage: "Just provide the one of the keys, no bool value required.",
+                                                requiresValue:false,
                                                 defaultValue:"false")
         static let imageName        = CliOption(keys:["-i", "--image-name", "UPDATE_PACKAGES_DOCKER_IMAGE_NAME"],
                                                 description:"The Docker image name to run the commands in",
@@ -136,25 +134,28 @@ extension XcodeHelper: CliRunnable {
                                                 defaultValue:"saltzmanjoelh/swiftubuntu")
     }
     public func handleUpdatePackages(option:CliOption) throws {
-        let index = option.argumentIndex
-        var sourcePath: String?
-        if let customDirectory = index[UpdatePackages.changeDirectory.keys.first!]?.first {
-            sourcePath = customDirectory
-        }else{
-            sourcePath = FileManager.default.currentDirectoryPath
+        let argumentIndex = option.argumentIndex
+        let sourcePath = parseSourceCodePath(from: argumentIndex, with: updatePackages.changeDirectory.keys.first)
+        
+        var forLinux = false
+        if argumentIndex.index(forKey: updatePackages.linuxPackages.keys.first!) != nil {
+            forLinux = true
         }
-        guard let forLinux = index[UpdatePackages.linuxPackages.keys.first!]?.first else {
-            throw XcodeHelperError.update(message: "\(UpdatePackages.linuxPackages.keys) keys were not provided.")
+        guard let imageName = argumentIndex[updatePackages.imageName.keys.first!]?.first else {
+            throw XcodeHelperError.update(message: "\(updatePackages.imageName.keys) keys were not provided.")
         }
         
-        guard let imageName = index[UpdatePackages.imageName.keys.first!]?.first else {
-            throw XcodeHelperError.update(message: "\(UpdatePackages.imageName.keys) keys were not provided.")
-        }
-        try updatePackages(at:sourcePath!, forLinux:(forLinux as NSString).boolValue, inDockerImage: imageName)
+        try xcodeHelpable.updatePackages(at:sourcePath, forLinux:forLinux, inDockerImage: imageName)
+    }
+    public var updatePackagesOption: CliOption {
+        var updatePackagesOption = updatePackages.command
+        updatePackagesOption.optionalArguments = [updatePackages.changeDirectory, updatePackages.linuxPackages, updatePackages.imageName]
+        updatePackagesOption.action = handleUpdatePackages
+        return updatePackagesOption
     }
     
     // MARK: Build
-    struct Build {
+    struct build {
         static let command              = CliOption(keys: ["build", "BUILD"],
                                                     description: "Build a Swift package in Linux and have the build errors appear in Xcode.",
                                                     usage: "xchelper build [OPTIONS]",
@@ -177,26 +178,27 @@ extension XcodeHelper: CliRunnable {
                                                     defaultValue:"saltzmanjoelh/swiftubuntu")
     }
     public func handleBuild(option:CliOption) throws {
-        let index = option.argumentIndex
-        var sourcePath: String?
-        if let customDirectory = index[Build.changeDirectory.keys.first!]?.first {
-            sourcePath = customDirectory
-        }else{
-            sourcePath = FileManager.default.currentDirectoryPath
-        }
-        guard let buildConfigurationString = index[Build.buildConfiguration.keys.first!]?.first else {
-            throw XcodeHelperError.build(message: "\(Build.buildConfiguration.keys) not provided.", exitCode: 1)
+        let argumentIndex = option.argumentIndex
+        let sourcePath = parseSourceCodePath(from: argumentIndex, with: build.changeDirectory.keys.first)
+        
+        guard let buildConfigurationString = argumentIndex[build.buildConfiguration.keys.first!]?.first else {
+            throw XcodeHelperError.build(message: "\(build.buildConfiguration.keys) not provided.", exitCode: 1)
         }
         let buildConfiguration = BuildConfiguration(from:buildConfigurationString)
-        
-        guard let imageName = index[Build.imageName.keys.first!]?.first else {
-            throw XcodeHelperError.build(message: "\(Build.imageName.keys) not provided.", exitCode: 1)
+        guard let imageName = argumentIndex[build.imageName.keys.first!]?.first else {
+            throw XcodeHelperError.build(message: "\(build.imageName.keys) not provided.", exitCode: 1)
         }
-        try build(source: sourcePath!, usingConfiguration: buildConfiguration, inDockerImage: imageName)
+        try xcodeHelpable.build(source: sourcePath, usingConfiguration: buildConfiguration, inDockerImage: imageName, removeWhenDone: true)
+    }
+    public var buildOption: CliOption {
+        var buildOption = build.command
+        buildOption.optionalArguments = [build.changeDirectory, build.buildConfiguration, build.imageName]
+        buildOption.action = handleBuild
+        return buildOption
     }
     
     // MARK: Clean
-    struct Clean {
+    struct clean {
         static let command              = CliOption(keys: ["clean", "CLEAN"],
                                                     description: "Run swift build --clean on your package.",
                                                     usage: "xchelper clean [OPTIONS]",
@@ -209,18 +211,19 @@ extension XcodeHelper: CliRunnable {
                                                 defaultValue:nil)
     }
     public func handleClean(option:CliOption) throws {
-        let index = option.argumentIndex
-        var sourcePath: String?
-        if let customDirectory = index[Clean.changeDirectory.keys.first!]?.first {
-            sourcePath = customDirectory
-        }else{
-            sourcePath = FileManager.default.currentDirectoryPath
-        }
-        try clean(source: sourcePath!)
+        let argumentIndex = option.argumentIndex
+        let sourcePath = parseSourceCodePath(from: argumentIndex, with: clean.changeDirectory.keys.first)
+        try xcodeHelpable.clean(source: sourcePath)
+    }
+    public var cleanOption: CliOption {
+        var cleanOption = clean.command
+        cleanOption.optionalArguments = [clean.changeDirectory]
+        cleanOption.action = handleClean
+        return cleanOption
     }
     
     // MARK: SymlinkDependencies
-    struct SymlinkDependencies {
+    struct symlinkDependencies {
         static let command              = CliOption(keys: ["symlink-dependencies", "SYMLINK_DEPENDENCIES"],
                                                     description: "Create symbolic links for Xcode 'Dependencies' after `swift package update` so you don't have to generate a new xcode project.",
                                                     usage: "xchelper symlink-dependencies [OPTIONS]",
@@ -233,18 +236,13 @@ extension XcodeHelper: CliRunnable {
                                                 defaultValue:nil)
     }
     public func handleSymlinkDependencies(option:CliOption) throws {
-        let index = option.argumentIndex
-        var sourcePath: String?
-        if let customDirectory = index[SymlinkDependencies.changeDirectory.keys.first!]?.first {
-            sourcePath = customDirectory
-        }else{
-            sourcePath = FileManager.default.currentDirectoryPath
-        }
-        try symLinkDependencies(sourcePath: sourcePath!)
+        let argumentIndex = option.argumentIndex
+        let sourcePath = parseSourceCodePath(from: argumentIndex, with: symlinkDependencies.changeDirectory.keys.first)
+        try xcodeHelpable.symLinkDependencies(sourcePath: sourcePath)
     }
     
     // MARK: CreateArchive
-    struct CreateArchive {
+    struct createArchive {
         static let command              = CliOption(keys: ["create-archive", "CREATE_ARCHIVE"],
                                                     description: "Archive files with tar.",
                                                     usage: "xchelper create-archive ARCHIVE_PATH FILES [OPTIONS]. ARCHIVE_PATH the full path and filename for the archive to be created. FILES is a space separated list of full paths to the files you want to archive.",
@@ -253,26 +251,30 @@ extension XcodeHelper: CliRunnable {
         static let flatList   = CliOption(keys:["-f", "--flat-list", "CREATE_ARCHIVE_FLAT_LIST"],
                                           description:"Put all the files in a flat list instead of maintaining directory structure",
                                           usage: nil,
-                                          requiresValue:true,
-                                          defaultValue:"true")
+                                          requiresValue:false,
+                                          defaultValue:nil)
     }
     public func handleCreateArchive(option:CliOption) throws {
-        let index = option.argumentIndex
-        guard let paths = index[CreateArchive.command.keys.first!] else {
+        let argumentIndex = option.argumentIndex
+        guard let paths = argumentIndex[createArchive.command.keys.first!] else {
             throw XcodeHelperError.createArchive(message: "You didn't provide any paths.")
         }
         guard let archivePath = paths.first else {
             throw XcodeHelperError.createArchive(message: "You didn't provide the archive path.")
         }
+        var flatList = false
+        if let _ = argumentIndex[createArchive.flatList.keys.first!]?.first {
+            flatList = true
+        }
         guard paths.count > 1 else {
             throw XcodeHelperError.createArchive(message: "You didn't provide any files to archive.")
         }
         let filePaths = Array(paths[1..<paths.count])
-        try createArchive(at: archivePath, with: filePaths)
+        try xcodeHelpable.createArchive(at: archivePath, with: filePaths, flatList: flatList)
     }
     
     // MARK: UploadArchive
-    struct UploadArchive {
+    struct uploadArchive {
         static let command              = CliOption(keys: ["upload-archive", "UPLOAD_ARCHIVE"],
                                                     description: "Upload an archive to S3",
                                                     usage: "xchelper upload-archive ARCHIVE_PATH [OPTIONS]. ARCHIVE_PATH the path of the archive that you want to upload to S3.",
@@ -305,28 +307,28 @@ extension XcodeHelper: CliRunnable {
                                                     defaultValue:nil)
     }
     public func handleUploadArchive(option:CliOption) throws {
-        let index = option.argumentIndex
-        guard let archivePath = index[UploadArchive.command.keys.first!]?.first else {
+        let argumentIndex = option.argumentIndex
+        guard let archivePath = argumentIndex[uploadArchive.command.keys.first!]?.first else {
             throw XcodeHelperError.uploadArchive(message: "You didn't prove the path to the archive that you want to upload.")
         }
-        guard let bucket = index[UploadArchive.bucket.keys.first!]?.first else {
+        guard let bucket = argumentIndex[uploadArchive.bucket.keys.first!]?.first else {
             throw XcodeHelperError.uploadArchive(message: "You didn't provide the S3 bucket to upload to.")
         }
-        guard let region = index[UploadArchive.region.keys.first!]?.first else {
+        guard let region = argumentIndex[uploadArchive.region.keys.first!]?.first else {
             throw XcodeHelperError.uploadArchive(message: "You didn't provide the region for the bucket.")
         }
         
-        if index[UploadArchive.key.keys.first!]?.first != nil {
-            if let key = index[UploadArchive.key.keys.first!]?.first {
-                guard let secret = index[UploadArchive.secret.keys.first!]?.first else {
+        if argumentIndex[uploadArchive.key.keys.first!]?.first != nil {
+            if let key = argumentIndex[uploadArchive.key.keys.first!]?.first {
+                guard let secret = argumentIndex[uploadArchive.secret.keys.first!]?.first else {
                     throw XcodeHelperError.uploadArchive(message: "You didn't provide the secret for the key.")
                 }
-                try uploadArchive(at: archivePath, to: bucket, in: region, key: key, secret: secret)
+                try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, key: key, secret: secret)
             }
             
-        } else if index[UploadArchive.credentialsFile.keys.first!]?.first != nil {
-            if let file = index[UploadArchive.credentialsFile.keys.first!]?.first {
-                try uploadArchive(at: archivePath, to: bucket, in: region, using: file)
+        } else if argumentIndex[uploadArchive.credentialsFile.keys.first!]?.first != nil {
+            if let file = argumentIndex[uploadArchive.credentialsFile.keys.first!]?.first {
+                try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, using: file)
             }
             
         } else {
@@ -335,8 +337,7 @@ extension XcodeHelper: CliRunnable {
     }
     
     // MARK: GitTag
-    struct GitTag {
-        //TODO: how do I set a default flag here?
+    struct gitTag {
         static let command              = CliOption(keys: ["git-tag", "GIT_TAG"],
                                                     description: "Update your package's git repo's semantic versioned tag",
                                                     usage: "xchelper git-tag [OPTIONS]",
@@ -357,40 +358,48 @@ extension XcodeHelper: CliRunnable {
                                                     usage: nil,
                                                     requiresValue: true,
                                                     defaultValue: "patch")
+        static let pushOption           = CliOption(keys: ["-p", "--push", "GIT_TAG_PUSH"],
+                                                    description: "Push your tag with `git push && git push origin #.#.#`",
+                                                    usage: nil,
+                                                    requiresValue: false,
+                                                    defaultValue: nil)
     }
+    
     public func handleGitTag(option:CliOption) throws {
-        let index = option.argumentIndex
-        var sourcePath: String?
-        if let customDirectory = index[GitTag.changeDirectory.keys.first!]?.first {
-            sourcePath = customDirectory
-        }else{
-            sourcePath = FileManager.default.currentDirectoryPath
-        }
+        let argumentIndex = option.argumentIndex
+        let sourcePath = parseSourceCodePath(from: argumentIndex, with: gitTag.changeDirectory.keys.first!)
         do {
+            var versionString: String?
             
             //update from user input
-            if let version = index[GitTag.versionOption.keys.first!]?.first {
-                try gitTag(tag: version, at: sourcePath!)
+            if let version = argumentIndex[gitTag.versionOption.keys.first!]?.first {
+                try xcodeHelpable.gitTag(tag: version, at: sourcePath)
+                versionString = version
                 
-            }else if let componentString = index[GitTag.incrementOption.keys.first!]?.first {
+            }else{
+                guard let componentString = argumentIndex[gitTag.incrementOption.keys.first!]?.first else {
+                    throw XcodeHelperError.gitTagParse(message: "You must provide either \(gitTag.versionOption.keys) OR \(gitTag.incrementOption.keys)")
+                }
                 guard let component = GitTagComponent(rawValue: componentString) else {
                     throw XcodeHelperError.gitTagParse(message: "Unknown value \(componentString)")
                 }
-                try incrementGitTag(components: [component], at: sourcePath!)
-            }else{
-                throw XcodeHelperError.gitTagParse(message: "You must provide either \(GitTag.versionOption.keys) OR \(GitTag.incrementOption.keys)")
+                versionString = try xcodeHelpable.incrementGitTag(components: [component], at: sourcePath)
+            }
+            
+            if let tag = versionString, argumentIndex.index(forKey: gitTag.pushOption.keys.first!) != nil {
+                try xcodeHelpable.pushGitTag(tag: tag, at: sourcePath)
             }
             
         } catch XcodeHelperError.gitTag(_) {
             //no current tag, just start it at 0.0.1
-            try gitTag(tag: "0.0.1" , at: sourcePath!)
+            try xcodeHelpable.gitTag(tag: "0.0.1" , at: sourcePath)
         }
         
         
     }
     
     // MARK: CreateXcarchive
-    struct CreateXcarchive {
+    struct createXcarchive {
         
         static let command              = CliOption(keys: ["create-xcarchive", "CREATE_XCARCHIVE"],
                                                     description: "Store your built binary in an xcarchive where Xcode's Organizer can keep track",
@@ -410,17 +419,17 @@ extension XcodeHelper: CliRunnable {
     }
     //returns the path to the new xcarchive
     public func handleCreateXcarchive(option:CliOption) throws -> String {
-        let index = option.argumentIndex
-        guard let archivePath = index[CreateXcarchive.command.keys.first!]?.first else {
+        let argumentIndex = option.argumentIndex
+        guard let archivePath = argumentIndex[createXcarchive.command.keys.first!]?.first else {
             throw XcodeHelperError.createArchive(message: "You didn't prove the path to the xcarchive.")
         }
-        guard let name = index[CreateXcarchive.nameOption.keys.first!]?.first else {
+        guard let name = argumentIndex[createXcarchive.nameOption.keys.first!]?.first else {
             throw XcodeHelperError.createArchive(message: "You didn't prove the name to include in the plist.")
         }
-        guard let scheme = index[CreateXcarchive.schemeOption.keys.first!]?.first else {
+        guard let scheme = argumentIndex[createXcarchive.schemeOption.keys.first!]?.first else {
             throw XcodeHelperError.createArchive(message: "You didn't prove the scheme to include in the plist.")
         }
-        return try createXcarchive(in: archivePath, with: name, from: scheme)
+        return try xcodeHelpable.createXcarchive(in: archivePath, with: name, from: scheme)
     }
 
 }

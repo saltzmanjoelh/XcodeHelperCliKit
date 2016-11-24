@@ -7,13 +7,15 @@
 //
 
 //TODO: add pushGitTag
+//TODO: make an struct xchelper: CliRunnable  that owns and parses the options, then when handling I can pass in XcodeHelper generic for testing purposesf
 
 import Foundation
 import CliRunnable
 import XcodeHelperCliKit
 import XcodeHelperKit
 
-let helper = XcodeHelper()
+
+let helper = XCHelper(xcodeHelpable:XcodeHelper())
 do {
     try helper.run(arguments:ProcessInfo.processInfo.arguments, environment:ProcessInfo.processInfo.environment)
 } catch let e as XcodeHelperError {

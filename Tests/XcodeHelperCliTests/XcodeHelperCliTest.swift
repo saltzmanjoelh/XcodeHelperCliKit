@@ -8,7 +8,11 @@
 
 import XCTest
 import XcodeHelperKit
-import XcodeHelperCliKit
+@testable import XcodeHelperCliKit
+import SynchronousProcess
+import CliRunnable
+
+//MARK: TESTS
 
 class XcodeHelperCliTests: XCTestCase {
     
@@ -50,67 +54,212 @@ class XcodeHelperCliTests: XCTestCase {
         return tempDir
     }
     
+    func testParseSourceCodePath_custom(){
+        let xchelper = XCHelper(xcodeHelpable:XcodeHelper())
+        let key = XCHelper.updatePackages.changeDirectory.keys.first!
+        let customPath = "/tmp/path"
+        let argumentIndex = [key:[customPath]]
+        
+        let result = xchelper.parseSourceCodePath(from: argumentIndex, with: key)
+        
+        XCTAssertEqual(result, customPath)
+    }
+    /*
+    func testHandleFetchPackages_missingLinuxPackage() {
+        do{
+            struct HelpableFixture: XcodeHelpable {}
+            let xchelper = XCHelper(xcodeHelpable:HelpableFixture())
+            let option = xchelper.fetchPackagesOption
+            
+            try xchelper.handleFetchPackages(option: option)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.fetch(let message){
+            XCTAssertTrue(message.contains(XCHelper.fetchPackages.linuxPackages.keys.first!), "linuxPackages error should have been thrown.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testHandleFetchPackages_missingImageName() {
+        do{
+            struct HelpableFixture: XcodeHelpable {}
+            let xchelper = XCHelper(xcodeHelpable:HelpableFixture())
+            //set the linuxPackages command to have a value so we move further down the function
+            let option = xchelper.fetchPackagesOption.preparedWithOptionalArg(fixtures: [XCHelper.fetchPackages.linuxPackages])
+            
+            try xchelper.handleFetchPackages(option: option)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.fetch(let message){
+            XCTAssertTrue(message.contains(XCHelper.fetchPackages.imageName.keys.first!), "imageName error should have been thrown.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testHandleFetchPackages() {
+        do{
+            struct HelpableFixture: XcodeHelpable, Fulfillable {
+                let linuxPackages = true
+                let imageName = "image"
+                var fulfill: ((Void) -> (Void))?
+                init(){}
+                @discardableResult func fetchPackages(at sourcePath: String, forLinux: Bool, inDockerImage imageName: String?) throws -> ProcessResult {
+                    fulfill?()
+                    return (output:nil, error:nil, exitCode:0)
+                }
+            }
+            var didCallFetchPackages = false
+            let xchelper = XCHelper(xcodeHelpable:HelpableFixture(){ didCallFetchPackages = true })
+            let option = xchelper.fetchPackagesOption.preparedWithOptionalArg(fixtures: [XCHelper.fetchPackages.linuxPackages,
+                                                                                         XCHelper.fetchPackages.imageName])
+            
+            try xchelper.handleFetchPackages(option: option)
+            
+            XCTAssertTrue(didCallFetchPackages, "Failed to call fetchPackages on xcodeHelpable")
+            
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }*/
     
-    func testHandleGitTagMajor() {
+    func testHandleUpdatePackages_missingLinuxPackage() {
+        //missing linuxPackage option should still proceed, just default to false
         do{
-            let helper = XcodeHelper()
-            sourcePath = cloneToTempDirectory(repoURL: libraryRepoURL)
-            var gitTagCommand = helper.cliOptionGroups.first!.options.last!//get the command
-            gitTagCommand.values = [sourcePath!]
-            var incrementOption = gitTagCommand.optionalArguments![1]
-            incrementOption.values = [GitTagComponent.major.rawValue]//simulate -i "patch"
-            gitTagCommand.optionalArguments = [incrementOption]
-            let currentTag = try helper.getGitTag(sourcePath: sourcePath!)
-            let targetTag = Int(currentTag.components(separatedBy: ".")[0])!+1
             
-            try helper.handleGitTag(option: gitTagCommand)
+            var didCallUpdatePackages = false
+            let expectations = [XCHelper.updatePackages.changeDirectory:["/tmp"],
+                                XCHelper.updatePackages.imageName: ["image"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testUpdatePackages = { (sourcePath:String, forLinux:Bool, imageName:String?) -> ProcessResult in
+                didCallUpdatePackages = true
+                XCTAssertFalse(forLinux, "forLinux param should have defaulted to false")
+                XCTAssertEqual(sourcePath, expectations[XCHelper.updatePackages.changeDirectory]?.first)
+                XCTAssertEqual(imageName, expectations[XCHelper.updatePackages.imageName]?.first)
+                return emptyProcessResult
+            }
+            let xchelper = XCHelper(xcodeHelpable:fixture)
+            let option = xchelper.updatePackagesOption.preparedWithOptionalArg(fixtureIndex: fixture.expectations!)
             
-            let updatedTag = try helper.getGitTag(sourcePath: sourcePath!)
-            XCTAssertEqual(updatedTag.components(separatedBy: ".")[0], String(targetTag))
+            try xchelper.handleUpdatePackages(option: option)
             
-        } catch let e {
+            XCTAssertTrue(didCallUpdatePackages, "Failed to call updatePackages on XcodeHelpable")
+        }catch let e{
             XCTFail("Error: \(e)")
         }
     }
-    func testHandleGitTagMinor() {
+    func testHandleUpdatePackages_missingImageName() {
+        
         do{
-            let helper = XcodeHelper()
-            sourcePath = cloneToTempDirectory(repoURL: libraryRepoURL)
-            var gitTagCommand = helper.cliOptionGroups.first!.options.last!//get the command
-            gitTagCommand.values = [sourcePath!]
-            var incrementOption = gitTagCommand.optionalArguments![1]
-            incrementOption.values = [GitTagComponent.minor.rawValue]//simulate -i "patch"
-            gitTagCommand.optionalArguments = [incrementOption]
-            let currentTag = try helper.getGitTag(sourcePath: sourcePath!)
-            let targetTag = Int(currentTag.components(separatedBy: ".")[1])!+1
+            let xchelper = XCHelper(xcodeHelpable:Fixture())
+            let option = xchelper.updatePackagesOption.preparedWithOptionalArg(fixtures: [XCHelper.updatePackages.linuxPackages])
             
-            try helper.handleGitTag(option: gitTagCommand)
+            try xchelper.handleUpdatePackages(option: option)
             
-            let updatedTag = try helper.getGitTag(sourcePath: sourcePath!)
-            XCTAssertEqual(updatedTag.components(separatedBy: ".")[1], String(targetTag))
-            
-        } catch let e {
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.update(let message){
+            XCTAssertTrue(message.contains(XCHelper.updatePackages.imageName.keys.first!), "imageName error should have been thrown.")
+        }catch let e{
             XCTFail("Error: \(e)")
         }
     }
-    func testHandleGitTagPatch() {
+    func testHandleUpdatePackages() {
         do{
-            let helper = XcodeHelper()
-            sourcePath = cloneToTempDirectory(repoURL: libraryRepoURL)
-            var gitTagCommand = helper.cliOptionGroups.first!.options.last!//get the command
-            gitTagCommand.values = [sourcePath!]
-            var incrementOption = gitTagCommand.optionalArguments![1]
-            incrementOption.values = [GitTagComponent.patch.rawValue]//simulate -i "patch"
-            gitTagCommand.optionalArguments = [incrementOption]
-            let currentTag = try helper.getGitTag(sourcePath: sourcePath!)
-            let targetTag = Int(currentTag.components(separatedBy: ".")[2])!+1
+            var didCallUpdatePackages = false
+            let expectations = [XCHelper.updatePackages.changeDirectory: ["/tmp"],
+                                 XCHelper.updatePackages.linuxPackages: ["true"],
+                                 XCHelper.updatePackages.imageName: ["image"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testUpdatePackages = { (sourcePath:String, forLinux:Bool, imageName:String?) -> ProcessResult in
+                didCallUpdatePackages = true
+                XCTAssertEqual(sourcePath, expectations[XCHelper.updatePackages.changeDirectory]?.first)
+                XCTAssertEqual("\(forLinux)", expectations[XCHelper.updatePackages.linuxPackages]?.first)
+                XCTAssertEqual(imageName, expectations[XCHelper.updatePackages.imageName]?.first)
+                return emptyProcessResult
+            }
+            let xchelper = XCHelper(xcodeHelpable:fixture)
+            let option = xchelper.updatePackagesOption.preparedWithOptionalArg(fixtureIndex: expectations)
             
-            try helper.handleGitTag(option: gitTagCommand)
+            try xchelper.handleUpdatePackages(option: option)
             
-            let updatedTag = try helper.getGitTag(sourcePath: sourcePath!)
-            XCTAssertEqual(updatedTag.components(separatedBy: ".")[2], String(targetTag))
+            XCTAssertTrue(didCallUpdatePackages, "Failed to call updatePackages on XcodeHelpable")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    
+    private func buildConfigurationTest(buildConfiguration: BuildConfiguration){
+        do{
+            let expectations = [XCHelper.build.buildConfiguration: ["\(buildConfiguration)"],
+                                XCHelper.build.imageName: ["image"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testBuild = { (sourcePath: String, configuration:BuildConfiguration, imageName: String, removeWhenDone: Bool) in
+                XCTAssertEqual(configuration, buildConfiguration)
+                return emptyProcessResult
+            }
+            let xchelper = XCHelper(xcodeHelpable:fixture)
+            let option = xchelper.buildOption.preparedWithOptionalArg(fixtureIndex: expectations)
             
-        } catch let e {
+            try xchelper.handleBuild(option: option)
+            
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testHandleBuild_buildConfiguration_release() {
+        buildConfigurationTest(buildConfiguration: .release)
+    }
+    func testHandleBuild_buildConfiguration_debug() {
+        buildConfigurationTest(buildConfiguration: .debug)
+    }
+    func testHandleBuild_missingBuildConfiguration() {
+        do{
+            let xchelper = XCHelper(xcodeHelpable:Fixture())
+            let option = xchelper.buildOption
+            try xchelper.handleBuild(option: option)
+            
+        }catch XcodeHelperError.build(let message, _){
+            XCTAssertTrue(message.contains(XCHelper.build.buildConfiguration.keys.first!), "buildConfiguration error should have been thrown.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testHandleBuild_missingImageName() {
+        do{
+            let xchelper = XCHelper(xcodeHelpable:Fixture())
+            var option = xchelper.buildOption
+            option.optionalArguments = prepare(options: option.optionalArguments,
+                                               with: [XCHelper.build.buildConfiguration: ["\(BuildConfiguration.debug)"]])
+            
+            try xchelper.handleBuild(option: option)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.build(let message, _){
+            XCTAssertTrue(message.contains(XCHelper.build.imageName.keys.first!), "imageName error should have been thrown.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testHandleBuild() {
+        do{
+            var didCallBuild = false
+            let expectations = [XCHelper.build.buildConfiguration: ["\(BuildConfiguration.debug)"],
+                                XCHelper.build.changeDirectory: ["/tmp"],
+                                XCHelper.build.imageName: ["image"]]
+            var fixture = Fixture(expectations:expectations)
+            fixture.testBuild = { (sourcePath: String, configuration:BuildConfiguration, imageName: String, removeWhenDone: Bool) in
+                didCallBuild = true
+                XCTAssertEqual("\(configuration)", expectations[XCHelper.build.buildConfiguration]?.first!)
+                XCTAssertEqual(sourcePath, expectations[XCHelper.build.changeDirectory]?.first!)
+                XCTAssertEqual(imageName, expectations[XCHelper.build.imageName]?.first!)
+                return emptyProcessResult
+            }
+            let xchelper = XCHelper(xcodeHelpable:fixture)
+            let option = xchelper.buildOption.preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleBuild(option: option)
+
+            XCTAssertTrue(didCallBuild, "Failed to call build on xcodeHelpable.")
+        }catch let e{
             XCTFail("Error: \(e)")
         }
     }

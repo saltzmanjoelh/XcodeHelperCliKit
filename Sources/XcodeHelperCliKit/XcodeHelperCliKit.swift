@@ -74,7 +74,7 @@ public struct XCHelper : CliRunnable {
                                                 usage: "xchelper fetch-packages [OPTIONS]",
                                                 requiresValue: false,
                                                 defaultValue:nil)
-        static let changeDirectory  = CliOption(keys:["-C", "--chdir", "XCHELPER_CHDIR"],
+        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
                                                 requiresValue:true,
@@ -117,7 +117,7 @@ public struct XCHelper : CliRunnable {
                                                 usage: "xchelper update-packages [OPTIONS]",
                                                 requiresValue: false,
                                                 defaultValue:nil)
-        static let changeDirectory  = CliOption(keys:["-C", "--chdir", "XCHELPER_CHDIR"],
+        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
                                                 requiresValue:true,
@@ -126,7 +126,12 @@ public struct XCHelper : CliRunnable {
                                                 description:"Some packages have Linux specific dependencies. Use this option to update the Linux version of the packages. Linux packages may not be compatible with the macOS dependencies. `swift build --clean` is performed before they are updated",
                                                 usage: "Just provide the one of the keys, no bool value required.",
                                                 requiresValue:false,
-                                                defaultValue:"false")
+                                                defaultValue: nil)
+        static let symlink          = CliOption(keys:["-s", "--symlink", "UPDATE_PACKAGES_SYMLINK"],
+                                                description:"Create symbolic links for the dependency 'Packages' after `swift package update` so you don't have to generate a new xcode project.",
+                                                usage: nil,
+                                                requiresValue:false,
+                                                defaultValue: nil)
         static let imageName        = CliOption(keys:["-i", "--image-name", "UPDATE_PACKAGES_DOCKER_IMAGE_NAME"],
                                                 description:"The Docker image name to run the commands in",
                                                 usage: nil,
@@ -138,18 +143,21 @@ public struct XCHelper : CliRunnable {
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: updatePackages.changeDirectory.keys.first)
         
         var forLinux = false
-        if argumentIndex.index(forKey: updatePackages.linuxPackages.keys.first!) != nil {
-            forLinux = true
+        if let forLinuxString = argumentIndex[updatePackages.linuxPackages.keys.first!]?.first {
+            forLinux = (forLinuxString as NSString).boolValue
         }
         guard let imageName = argumentIndex[updatePackages.imageName.keys.first!]?.first else {
             throw XcodeHelperError.update(message: "\(updatePackages.imageName.keys) keys were not provided.")
         }
         
         try xcodeHelpable.updatePackages(at:sourcePath, forLinux:forLinux, inDockerImage: imageName)
+        if argumentIndex[updatePackages.symlink.keys.first!] != nil {
+            try xcodeHelpable.symlinkDependencies(sourcePath: sourcePath)
+        }
     }
     public var updatePackagesOption: CliOption {
         var updatePackagesOption = updatePackages.command
-        updatePackagesOption.optionalArguments = [updatePackages.changeDirectory, updatePackages.linuxPackages, updatePackages.imageName]
+        updatePackagesOption.optionalArguments = [updatePackages.changeDirectory, updatePackages.linuxPackages, updatePackages.symlink, updatePackages.imageName]
         updatePackagesOption.action = handleUpdatePackages
         return updatePackagesOption
     }
@@ -161,7 +169,7 @@ public struct XCHelper : CliRunnable {
                                                     usage: "xchelper build [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue:nil)
-        static let changeDirectory      = CliOption(keys:["-C", "--chdir", "XCHELPER_CHDIR"],
+        static let changeDirectory      = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
                                                 requiresValue:true,
@@ -204,7 +212,7 @@ public struct XCHelper : CliRunnable {
                                                     usage: "xchelper clean [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue:nil)
-        static let changeDirectory  = CliOption(keys:["-C", "--chdir", "XCHELPER_CHDIR"],
+        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
                                                 requiresValue:true,
@@ -213,7 +221,7 @@ public struct XCHelper : CliRunnable {
     public func handleClean(option:CliOption) throws {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: clean.changeDirectory.keys.first)
-        try xcodeHelpable.clean(source: sourcePath)
+        try xcodeHelpable.clean(sourcePath: sourcePath)
     }
     public var cleanOption: CliOption {
         var cleanOption = clean.command
@@ -225,11 +233,11 @@ public struct XCHelper : CliRunnable {
     // MARK: SymlinkDependencies
     struct symlinkDependencies {
         static let command              = CliOption(keys: ["symlink-dependencies", "SYMLINK_DEPENDENCIES"],
-                                                    description: "Create symbolic links for Xcode 'Dependencies' after `swift package update` so you don't have to generate a new xcode project.",
+                                                    description: "Create symbolic links for the dependency 'Packages' after `swift package update` so you don't have to generate a new xcode project.",
                                                     usage: "xchelper symlink-dependencies [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue:nil)
-        static let changeDirectory  = CliOption(keys:["-C", "--chdir", "XCHELPER_CHDIR"],
+        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
                                                 requiresValue:true,
@@ -238,7 +246,7 @@ public struct XCHelper : CliRunnable {
     public func handleSymlinkDependencies(option:CliOption) throws {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: symlinkDependencies.changeDirectory.keys.first)
-        try xcodeHelpable.symLinkDependencies(sourcePath: sourcePath)
+        try xcodeHelpable.symlinkDependencies(sourcePath: sourcePath)
     }
     
     // MARK: CreateArchive
@@ -300,7 +308,7 @@ public struct XCHelper : CliRunnable {
                                                     usage: nil,
                                                     requiresValue:true,
                                                     defaultValue:nil)
-        static let credentialsFile      = CliOption(keys:["-c", "--credentials", "UPLOAD_ARCHIVE_CREDENTIALS"],
+        static let credentialsFile      = CliOption(keys:["-d", "--credentials", "UPLOAD_ARCHIVE_CREDENTIALS"],
                                                     description:"The secret for the key.",
                                                     usage: nil,
                                                     requiresValue:true,
@@ -343,7 +351,7 @@ public struct XCHelper : CliRunnable {
                                                     usage: "xchelper git-tag [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue: nil)
-        static let changeDirectory      = CliOption(keys:["-C", "--chdir", "XCHELPER_CHDIR"],
+        static let changeDirectory      = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
                                                     description:"Change the current working directory.",
                                                     usage:nil,
                                                     requiresValue:true,
@@ -368,9 +376,10 @@ public struct XCHelper : CliRunnable {
     public func handleGitTag(option:CliOption) throws {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: gitTag.changeDirectory.keys.first!)
+        var outputString: String?
         do {
             var versionString: String?
-            
+
             //update from user input
             if let version = argumentIndex[gitTag.versionOption.keys.first!]?.first {
                 try xcodeHelpable.gitTag(tag: version, at: sourcePath)
@@ -385,17 +394,21 @@ public struct XCHelper : CliRunnable {
                 }
                 versionString = try xcodeHelpable.incrementGitTag(components: [component], at: sourcePath)
             }
-            
-            if let tag = versionString, argumentIndex.index(forKey: gitTag.pushOption.keys.first!) != nil {
+
+            if let tag = versionString, argumentIndex[gitTag.pushOption.keys.first!] != nil {
+                outputString = tag
                 try xcodeHelpable.pushGitTag(tag: tag, at: sourcePath)
             }
-            
+
         } catch XcodeHelperError.gitTag(_) {
             //no current tag, just start it at 0.0.1
-            try xcodeHelpable.gitTag(tag: "0.0.1" , at: sourcePath)
+            outputString = "0.0.1"
+            try xcodeHelpable.gitTag(tag: outputString! , at: sourcePath)
         }
         
-        
+        if let str = outputString {
+            print(str)
+        }
     }
     
     // MARK: CreateXcarchive

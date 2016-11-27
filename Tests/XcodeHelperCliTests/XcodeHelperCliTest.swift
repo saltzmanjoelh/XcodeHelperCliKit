@@ -122,6 +122,7 @@ class XcodeHelperCliTests: XCTestCase {
         }
     }*/
     
+    //MARK: Update Packages
     func testHandleUpdatePackages_missingLinuxPackage() {
         //missing linuxPackage option should still proceed, just default to false
         do{
@@ -205,6 +206,8 @@ class XcodeHelperCliTests: XCTestCase {
             XCTFail("Error: \(e)")
         }
     }
+    
+    //MARK: Build
     func testHandleBuild_buildConfiguration_release() {
         buildConfigurationTest(buildConfiguration: .release)
     }
@@ -262,5 +265,32 @@ class XcodeHelperCliTests: XCTestCase {
         }catch let e{
             XCTFail("Error: \(e)")
         }
+    }
+    
+    //MARK: Clean
+    func testHandleClean() {
+        do{
+            var didCallClean = false
+            let expectations = [XCHelper.clean.changeDirectory: ["/tmp"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testClean = { (sourcePath: String) in
+                didCallClean = true
+                XCTAssertEqual(sourcePath, expectations[XCHelper.clean.changeDirectory]?.first!)
+                return emptyProcessResult
+            }
+            let xchelper = XCHelper(xcodeHelpable:fixture)
+            let option = xchelper.cleanOption.preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleClean(option: option)
+            
+            XCTAssertTrue(didCallClean)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    
+    //MARK: SymlinkDependencies
+    func testSymlinkDependencies() {
+        //everything in function is already tested
     }
 }

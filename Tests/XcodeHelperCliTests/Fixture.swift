@@ -23,23 +23,29 @@ struct Fixture: XcodeHelpable {
     {
         return (output:nil, error:nil, exitCode:0)
     }
+    
     var testUpdatePackages: ((String, Bool, String) -> ProcessResult)?
     @discardableResult func updatePackages(at sourcePath: String, forLinux: Bool, inDockerImage imageName: String) throws -> ProcessResult
     {
         return (testUpdatePackages?(sourcePath, forLinux, imageName))!
     }
+    
     var testBuild: ((String, BuildConfiguration, String, Bool) -> ProcessResult)?
     @discardableResult func build(source sourcePath: String, usingConfiguration configuration:BuildConfiguration, inDockerImage imageName: String, removeWhenDone: Bool) throws -> ProcessResult
     {
         return (testBuild?(sourcePath, configuration, imageName, removeWhenDone))!
     }
-    @discardableResult func clean(source: String) throws -> ProcessResult
+    
+    var testClean: ((String) -> ProcessResult)?
+    @discardableResult func clean(sourcePath: String) throws -> ProcessResult
     {
-        return (output:nil, error:nil, exitCode:0)
+        return (testClean?(sourcePath))!
     }
-    @discardableResult func symLinkDependencies(sourcePath: String) throws
+    
+    var testSymlinkDependencies: ((String) -> Void)?
+    @discardableResult func symlinkDependencies(sourcePath: String) throws
     {
-        
+        testSymlinkDependencies?(sourcePath)
     }
     @discardableResult func createArchive(at archivePath: String, with filePaths: [String], flatList: Bool) throws -> ProcessResult
     {

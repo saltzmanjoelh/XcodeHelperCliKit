@@ -54,6 +54,22 @@ class XcodeHelperCliTests: XCTestCase {
         return tempDir
     }
     
+    func testHelpableStrings() {
+        let fixture = Fixture()
+        let xchelper = XCHelper(xcodeHelpable: fixture)
+        
+        XCTAssertNotNil(xchelper.appName)
+        XCTAssertNotNil(xchelper.description)
+        XCTAssertNotNil(xchelper.appUsage)
+    }
+    func testCliOptionGroups() {
+        let fixture = Fixture()
+        let xchelper = XCHelper(xcodeHelpable: fixture)
+        
+        XCTAssertEqual(xchelper.cliOptionGroups.count, 1)
+        XCTAssertEqual(xchelper.cliOptionGroups.first?.options.count, 8)
+    }
+    
     func testParseSourceCodePath_custom(){
         let xchelper = XCHelper(xcodeHelpable:XcodeHelper())
         let key = XCHelper.updatePackages.changeDirectory.keys.first!
@@ -64,63 +80,6 @@ class XcodeHelperCliTests: XCTestCase {
         
         XCTAssertEqual(result, customPath)
     }
-    /*
-    func testHandleFetchPackages_missingLinuxPackage() {
-        do{
-            struct HelpableFixture: XcodeHelpable {}
-            let xchelper = XCHelper(xcodeHelpable:HelpableFixture())
-            let option = xchelper.fetchPackagesOption
-            
-            try xchelper.handleFetchPackages(option: option)
-            
-            XCTFail("An error should have been thrown")
-        }catch XcodeHelperError.fetch(let message){
-            XCTAssertTrue(message.contains(XCHelper.fetchPackages.linuxPackages.keys.first!), "linuxPackages error should have been thrown.")
-        }catch let e{
-            XCTFail("Error: \(e)")
-        }
-    }
-    func testHandleFetchPackages_missingImageName() {
-        do{
-            struct HelpableFixture: XcodeHelpable {}
-            let xchelper = XCHelper(xcodeHelpable:HelpableFixture())
-            //set the linuxPackages command to have a value so we move further down the function
-            let option = xchelper.fetchPackagesOption.preparedWithOptionalArg(fixtures: [XCHelper.fetchPackages.linuxPackages])
-            
-            try xchelper.handleFetchPackages(option: option)
-            
-            XCTFail("An error should have been thrown")
-        }catch XcodeHelperError.fetch(let message){
-            XCTAssertTrue(message.contains(XCHelper.fetchPackages.imageName.keys.first!), "imageName error should have been thrown.")
-        }catch let e{
-            XCTFail("Error: \(e)")
-        }
-    }
-    func testHandleFetchPackages() {
-        do{
-            struct HelpableFixture: XcodeHelpable, Fulfillable {
-                let linuxPackages = true
-                let imageName = "image"
-                var fulfill: ((Void) -> (Void))?
-                init(){}
-                @discardableResult func fetchPackages(at sourcePath: String, forLinux: Bool, inDockerImage imageName: String?) throws -> ProcessResult {
-                    fulfill?()
-                    return (output:nil, error:nil, exitCode:0)
-                }
-            }
-            var didCallFetchPackages = false
-            let xchelper = XCHelper(xcodeHelpable:HelpableFixture(){ didCallFetchPackages = true })
-            let option = xchelper.fetchPackagesOption.preparedWithOptionalArg(fixtures: [XCHelper.fetchPackages.linuxPackages,
-                                                                                         XCHelper.fetchPackages.imageName])
-            
-            try xchelper.handleFetchPackages(option: option)
-            
-            XCTAssertTrue(didCallFetchPackages, "Failed to call fetchPackages on xcodeHelpable")
-            
-        }catch let e{
-            XCTFail("Error: \(e)")
-        }
-    }*/
     
     //MARK: Update Packages
     func testHandleUpdatePackages_missingLinuxPackage() {
@@ -168,7 +127,8 @@ class XcodeHelperCliTests: XCTestCase {
             var didCallUpdatePackages = false
             let expectations = [XCHelper.updatePackages.changeDirectory: ["/tmp"],
                                  XCHelper.updatePackages.linuxPackages: ["true"],
-                                 XCHelper.updatePackages.imageName: ["image"]]
+                                 XCHelper.updatePackages.imageName: ["image"],
+                                 XCHelper.updatePackages.symlink: []]
             var fixture = Fixture(expectations: expectations)
             fixture.testUpdatePackages = { (sourcePath:String, forLinux:Bool, imageName:String?) -> ProcessResult in
                 didCallUpdatePackages = true
@@ -289,8 +249,242 @@ class XcodeHelperCliTests: XCTestCase {
         }
     }
     
-    //MARK: SymlinkDependencies
+    //MARK: Symlink Dependencies
     func testSymlinkDependencies() {
-        //everything in function is already tested
+        do{
+            var didCallSymlinkDependencies = false
+            let expectations = [XCHelper.symlinkDependencies.changeDirectory: ["/tmp"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testSymlinkDependencies = { (sourcePath: String) in
+                didCallSymlinkDependencies = true
+                XCTAssertEqual(sourcePath, expectations[XCHelper.symlinkDependencies.changeDirectory]?.first!)
+            }
+            let xchelper = XCHelper(xcodeHelpable:fixture)
+            let option = xchelper.symlinkDependenciesOption.preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleSymlinkDependencies(option: option)
+            
+            XCTAssertTrue(didCallSymlinkDependencies)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
     }
+    
+    //MARK: Create Archive
+    func testCreateArchive_missingPaths(){
+        do{
+            let xchelper = XCHelper(xcodeHelpable: Fixture())
+            let option = xchelper.createArchiveOption
+            
+            try xchelper.handleCreateArchive(option: option)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.createArchive(let message){
+            XCTAssertTrue(message.contains("paths"), "An error about missing paths should have been thrown.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testCreateArchive_missingArchivePath(){
+        do{
+            let expectations = [XCHelper.createArchive.command:[String]()]
+            let fixture = Fixture(expectations: expectations)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            let option = prepare(options: [xchelper.createArchiveOption], with: expectations)!.first
+            
+            try xchelper.handleCreateArchive(option: option!)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.createArchive(let message){
+            XCTAssertTrue(message.contains("archive path"), "An error about missing archive path should have been thrown.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testCreateArchive_missingFilePaths(){
+        do{
+            let expectations = [XCHelper.createArchive.command:["/tmp/archive.tar"]]
+            let fixture = Fixture(expectations: expectations)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            let option = prepare(options: [xchelper.createArchiveOption], with: expectations)!.first
+            
+            try xchelper.handleCreateArchive(option: option!)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.createArchive(let message){
+            XCTAssertTrue(message.contains("any files"), "An error not providing any files should have been thrown.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testCreateArchive(){
+        do{
+            var didCallCreateArchive = false
+            let expectations = [XCHelper.createArchive.command: ["/tmp/archive.tar", "/tmp/file.swift"],
+                                XCHelper.createArchive.flatList: ["true"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testCreateArchive = { (archivePath: String, filePaths: [String], flatList: Bool) in
+                didCallCreateArchive = true
+                XCTAssertEqual(archivePath, expectations[XCHelper.createArchive.command]?[0])
+                XCTAssertEqual(filePaths.first, expectations[XCHelper.createArchive.command]?[1])
+                XCTAssertTrue(flatList)
+                return emptyProcessResult
+            }
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            let option = prepare(options: [xchelper.createArchiveOption], with: expectations)!.first?.preparedWithOptionalArg(fixtureIndex: [XCHelper.createArchive.flatList: expectations[XCHelper.createArchive.flatList]!])
+            
+            try xchelper.handleCreateArchive(option: option!)
+            
+            XCTAssertTrue(didCallCreateArchive)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    
+    //MARK: Upload Archive
+    func testUploadArchive_missingArchivePath(){
+        do{
+            let xchelper = XCHelper(xcodeHelpable: Fixture())
+            let option = xchelper.uploadArchiveOption
+            
+            try xchelper.handleUploadArchive(option: option)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.uploadArchive(let message){
+            XCTAssertTrue(message.contains("path to the archive"), "An error about the path to the archive should have been thrown.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testUploadArchive_missingBucketName(){
+        do{
+            let expectations = [XCHelper.uploadArchive.command:["/tmp/archive.tar"]]
+            let fixture = Fixture(expectations: expectations)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            let option = prepare(options: [xchelper.uploadArchiveOption], with: expectations)!.first
+            
+            try xchelper.handleUploadArchive(option: option!)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.uploadArchive(let message){
+            XCTAssertTrue(message.contains("bucket"), "An error not providing the S3 bucket should have been thrown.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testUploadArchive_missingRegion(){
+        do{
+            let expectations = [XCHelper.uploadArchive.command: ["/tmp/archive.tar"],
+                                XCHelper.uploadArchive.bucket: ["bucketName"]]
+            let fixture = Fixture(expectations: expectations)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.uploadArchiveOption], with: expectations)!.first
+            option = option?.preparedWithRequiredArg(fixtureIndex: expectations)
+            
+            try xchelper.handleUploadArchive(option: option!)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.uploadArchive(let message){
+            XCTAssertTrue(message.contains("region"), "An error not providing the region should have been thrown instead of \(message).")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testUploadArchive_missingAccess(){
+        do{
+            let expectations = [XCHelper.uploadArchive.command: ["/tmp/archive.tar"],
+                                XCHelper.uploadArchive.bucket: ["bucketName"],
+                                XCHelper.uploadArchive.region: ["region"]]
+            let fixture = Fixture(expectations: expectations)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.uploadArchiveOption], with: expectations)!.first
+            option = option?.preparedWithRequiredArg(fixtureIndex: expectations)
+            
+            try xchelper.handleUploadArchive(option: option!)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.uploadArchive(let message){
+            XCTAssertTrue(message.contains("credentials"), "An error not providing the credentials or secret should have been thrown instead of \(message).")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testUploadArchive_missingSecret(){
+        do{
+            let expectations = [XCHelper.uploadArchive.command: ["/tmp/archive.tar"],
+                                XCHelper.uploadArchive.bucket: ["bucketName"],
+                                XCHelper.uploadArchive.region: ["region"],
+                                XCHelper.uploadArchive.key: ["key"]]
+            let fixture = Fixture(expectations: expectations)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.uploadArchiveOption], with: expectations)!.first
+            option = option?.preparedWithRequiredArg(fixtureIndex: expectations)
+            
+            try xchelper.handleUploadArchive(option: option!)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.uploadArchive(let message){
+            XCTAssertTrue(message.contains("secret"), "An error not providing the secret should have been thrown instead of \(message).")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testUploadArchive_withKeyAndSecret(){
+        do{
+            var didCallUploadArchive = false
+            let commandExpectation = [XCHelper.uploadArchive.command: ["/tmp/archive.tar"]]
+            let requiredExpectations = [XCHelper.uploadArchive.bucket: ["bucketName"],
+                                        XCHelper.uploadArchive.region: ["region"]]
+            let optionalExpectations = [XCHelper.uploadArchive.key: ["key"],
+                                       XCHelper.uploadArchive.secret: ["secret"]]
+            var fixture = Fixture()
+            fixture.testUploadArchive = { (archivePath: String, s3Bucket: String, region: String, key: String, secret: String) in
+                didCallUploadArchive = true
+                XCTAssertEqual(archivePath, commandExpectation[XCHelper.uploadArchive.command]!.first)
+                XCTAssertEqual(s3Bucket, requiredExpectations[XCHelper.uploadArchive.bucket]!.first)
+                XCTAssertEqual(region, requiredExpectations[XCHelper.uploadArchive.region]!.first)
+                XCTAssertEqual(key, optionalExpectations[XCHelper.uploadArchive.key]!.first)
+                XCTAssertEqual(secret, optionalExpectations[XCHelper.uploadArchive.secret]!.first)
+            }
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.uploadArchiveOption], with: commandExpectation)!.first
+            option = option?.preparedWithOptionalArg(fixtureIndex: optionalExpectations)
+            option = option?.preparedWithRequiredArg(fixtureIndex: requiredExpectations)
+            
+            
+            try xchelper.handleUploadArchive(option: option!)
+            
+            XCTAssertTrue(didCallUploadArchive)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testUploadArchive_withCredentials(){
+        do{
+            var didCallUploadArchive = false
+            let expectations = [XCHelper.uploadArchive.command: ["/tmp/archive.tar"],
+                                XCHelper.uploadArchive.bucket: ["bucketName"],
+                                XCHelper.uploadArchive.region: ["region"],
+                                XCHelper.uploadArchive.credentialsFile: ["credentialsFile"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testUploadArchiveWithCredentials = { (archivePath: String, s3Bucket: String, region: String, credentialsPath: String) in
+                didCallUploadArchive = true
+                XCTAssertEqual(archivePath, expectations[XCHelper.uploadArchive.command]!.first)
+                XCTAssertEqual(s3Bucket, expectations[XCHelper.uploadArchive.bucket]!.first)
+                XCTAssertEqual(region, expectations[XCHelper.uploadArchive.region]!.first)
+                XCTAssertEqual(credentialsPath, expectations[XCHelper.uploadArchive.credentialsFile]!.first)
+            }
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.uploadArchiveOption], with: expectations)!.first
+            option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleUploadArchive(option: option!)
+            
+            XCTAssertTrue(didCallUploadArchive)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    //MARK: Git Tag
+    //MARK: Create Xcarchive
 }

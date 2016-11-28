@@ -19,10 +19,6 @@ struct Fixture: XcodeHelpable {
     init(expectations:[CliOption: [String]]){
         self.expectations = expectations
     }
-    @discardableResult func fetchPackages(at sourcePath: String, forLinux:Bool, inDockerImage imageName: String?) throws -> ProcessResult
-    {
-        return (output:nil, error:nil, exitCode:0)
-    }
     
     var testUpdatePackages: ((String, Bool, String) -> ProcessResult)?
     @discardableResult func updatePackages(at sourcePath: String, forLinux: Bool, inDockerImage imageName: String) throws -> ProcessResult
@@ -47,18 +43,25 @@ struct Fixture: XcodeHelpable {
     {
         testSymlinkDependencies?(sourcePath)
     }
+    
+    var testCreateArchive: ((String, [String], Bool) -> ProcessResult)?
     @discardableResult func createArchive(at archivePath: String, with filePaths: [String], flatList: Bool) throws -> ProcessResult
     {
-        return (output:nil, error:nil, exitCode:0)
+        return (testCreateArchive?(archivePath, filePaths, flatList))!
     }
+    
+    var testUploadArchive: ((String, String, String, String, String) -> Void)?
     @discardableResult func uploadArchive(at archivePath: String, to s3Bucket: String, in region: String, key: String, secret: String) throws
     {
-        
+        (testUploadArchive?(archivePath, s3Bucket, region, key, secret))
     }
+    
+    var testUploadArchiveWithCredentials: ((String, String, String, String) -> Void)?
     @discardableResult func uploadArchive(at archivePath: String, to s3Bucket: String, in region: String, using credentialsPath: String) throws
     {
-        
+        (testUploadArchiveWithCredentials?(archivePath, s3Bucket, region, credentialsPath))
     }
+    
     @discardableResult func incrementGitTag(components: [GitTagComponent], at sourcePath: String) throws -> String
     {
         return "1.0.0"
@@ -92,22 +95,26 @@ extension CliOption: Hashable {
 extension CliOption {
     func preparedWithOptionalArg(fixtures: [CliOption]) -> CliOption {
         var copy = self
-        copy.optionalArguments = prepare(options: copy.optionalArguments, with: fixtures)
+        let options = copy.optionalArguments ?? [CliOption]()
+        copy.optionalArguments = prepare(options: options, with: fixtures)
         return copy
     }
     func preparedWithRequiredArg(fixtures: [CliOption]) -> CliOption {
         var copy = self
-        copy.requiredArguments = prepare(options: copy.requiredArguments, with: fixtures)
+        let options = copy.requiredArguments ?? [CliOption]()
+        copy.requiredArguments = prepare(options: options, with: fixtures)
         return copy
     }
     func preparedWithOptionalArg(fixtureIndex: [CliOption: [String]]) -> CliOption {
         var copy = self
-        copy.optionalArguments = prepare(options: copy.optionalArguments, with: fixtureIndex)
+        let options = copy.optionalArguments ?? [CliOption]()
+        copy.optionalArguments = prepare(options: options, with: fixtureIndex)
         return copy
     }
     func preparedWithRequiredArg(fixtureIndex: [CliOption: [String]]) -> CliOption {
         var copy = self
-        copy.requiredArguments = prepare(options: copy.requiredArguments, with: fixtureIndex)
+        let options = copy.requiredArguments ?? [CliOption]()
+        copy.requiredArguments = prepare(options: options, with: fixtureIndex)
         return copy
     }
 }
@@ -125,6 +132,10 @@ func prepare(options: [CliOption]?, with fixtureIndex: [CliOption:[String]]) -> 
         for valuePair in fixtureIndex {
             if let index = copy.index(of: valuePair.key) {
                 copy[index].values = valuePair.value
+            }else{
+                var option = valuePair.key
+                option.values = valuePair.value
+                copy.append(option)
             }
         }
         return copy

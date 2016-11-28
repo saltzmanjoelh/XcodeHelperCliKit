@@ -42,73 +42,10 @@ public struct XCHelper : CliRunnable {
     
     public var cliOptionGroups: [CliOptionGroup] {
         get {
-            var symLinkDependenciesOption = symlinkDependencies.command
-            symLinkDependenciesOption.optionalArguments = [symlinkDependencies.changeDirectory];
-            symLinkDependenciesOption.action = handleSymlinkDependencies
-            
-            var createArchiveOption = createArchive.command
-            createArchiveOption.optionalArguments = [createArchive.flatList]
-            createArchiveOption.action = handleCreateArchive
-            
-            var uploadArchve = uploadArchive.command
-            uploadArchve.requiredArguments = [uploadArchive.bucket, uploadArchive.region]//(key,secret) OR credentials check in handler
-            
-            var gitTagOption = gitTag.command
-            gitTagOption.optionalArguments = [gitTag.changeDirectory, gitTag.versionOption, gitTag.incrementOption, gitTag.pushOption]
-            gitTagOption.action = handleGitTag
-            
-            var createXcarchiveOption = createXcarchive.command
-            createXcarchiveOption.requiredArguments = [createXcarchive.nameOption, createXcarchive.schemeOption]
-            createXcarchiveOption.action = handleCreateArchive
-            
             return [CliOptionGroup(description:"Commands:",
-                                   options:[updatePackagesOption, buildOption, cleanOption, symLinkDependenciesOption, createArchiveOption, uploadArchve, gitTagOption, createXcarchiveOption])]
+                                   options:[updatePackagesOption, buildOption, cleanOption, symlinkDependenciesOption, createArchiveOption, uploadArchiveOption, gitTagOption, createXcarchiveOption])]
         }
     }
-    
-    /*
-    // MARK: FetchPackages
-    struct fetchPackages {
-        static let command          = CliOption(keys: ["fetch-packages", "FETCH_PACKAGES"],
-                                                description: "Fetch the package dependencies via 'swift package fetch'.",
-                                                usage: "xchelper fetch-packages [OPTIONS]",
-                                                requiresValue: false,
-                                                defaultValue:nil)
-        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
-                                                description:"Change the current working directory.",
-                                                usage:nil,
-                                                requiresValue:true,
-                                                defaultValue:nil)
-        static let linuxPackages    = CliOption(keys:["-l", "--linux-packages", "FETCH_PACKAGES_LINUX_PACKAGES"],
-                                                description:"Fetch the Linux version of the packages. Some packages have Linux specific dependencies which may not be compatible with the macOS dependencies. `swift build --clean` is performed before they are fetched.",
-                                                usage:"Just provide the one of the keys, no bool value required.",
-                                                requiresValue:false,
-                                                defaultValue:"false")
-        static let imageName        = CliOption(keys:["-i", "--image-name", "FETCH_PACKAGES_DOCKER_IMAGE_NAME"],
-                                                description:"The Docker image name to run the commands in.",
-                                                usage:nil,
-                                                requiresValue:true,
-                                                defaultValue:"saltzmanjoelh/swiftubuntu")
-    }
-    public func handleFetchPackages(option:CliOption) throws {
-        let argumentIndex = option.argumentIndex
-        let sourcePath = parseSourceCodePath(from: argumentIndex, with: fetchPackages.changeDirectory.keys.first!)
-        var forLinux = false
-        if argumentIndex.index(forKey: updatePackages.linuxPackages.keys.first!) != nil {
-            forLinux = true
-        }
-        guard let imageName = argumentIndex[fetchPackages.imageName.keys.first!]?.first else {
-            throw XcodeHelperError.fetch(message: "\(fetchPackages.imageName.keys) keys were not provided.")
-        }
-        
-        try xcodeHelpable.fetchPackages(at:sourcePath, forLinux:forLinux, inDockerImage: imageName)
-    }
-    public var fetchPackagesOption : CliOption {
-        var fetchPackagesOption = fetchPackages.command
-        fetchPackagesOption.optionalArguments = [fetchPackages.changeDirectory, fetchPackages.linuxPackages, fetchPackages.imageName]
-        fetchPackagesOption.action = handleFetchPackages
-        return fetchPackagesOption
-    }*/
     
     // MARK: UpdatePackages
     struct updatePackages {
@@ -248,6 +185,12 @@ public struct XCHelper : CliRunnable {
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: symlinkDependencies.changeDirectory.keys.first)
         try xcodeHelpable.symlinkDependencies(sourcePath: sourcePath)
     }
+    public var symlinkDependenciesOption: CliOption {
+        var symlinkDependenciesOption = symlinkDependencies.command
+        symlinkDependenciesOption.optionalArguments = [symlinkDependencies.changeDirectory];
+        symlinkDependenciesOption.action = handleSymlinkDependencies
+        return symlinkDependenciesOption
+    }
     
     // MARK: CreateArchive
     struct createArchive {
@@ -270,15 +213,22 @@ public struct XCHelper : CliRunnable {
         guard let archivePath = paths.first else {
             throw XcodeHelperError.createArchive(message: "You didn't provide the archive path.")
         }
+        guard paths.count > 1 else {
+            throw XcodeHelperError.createArchive(message: "You didn't provide any files to archive.")
+        }
         var flatList = false
         if let _ = argumentIndex[createArchive.flatList.keys.first!]?.first {
             flatList = true
         }
-        guard paths.count > 1 else {
-            throw XcodeHelperError.createArchive(message: "You didn't provide any files to archive.")
-        }
+        
         let filePaths = Array(paths[1..<paths.count])
         try xcodeHelpable.createArchive(at: archivePath, with: filePaths, flatList: flatList)
+    }
+    public var createArchiveOption: CliOption {
+        var createArchiveOption = createArchive.command
+        createArchiveOption.optionalArguments = [createArchive.flatList]
+        createArchiveOption.action = handleCreateArchive
+        return createArchiveOption
     }
     
     // MARK: UploadArchive
@@ -317,7 +267,7 @@ public struct XCHelper : CliRunnable {
     public func handleUploadArchive(option:CliOption) throws {
         let argumentIndex = option.argumentIndex
         guard let archivePath = argumentIndex[uploadArchive.command.keys.first!]?.first else {
-            throw XcodeHelperError.uploadArchive(message: "You didn't prove the path to the archive that you want to upload.")
+            throw XcodeHelperError.uploadArchive(message: "You didn't provide the path to the archive that you want to upload.")
         }
         guard let bucket = argumentIndex[uploadArchive.bucket.keys.first!]?.first else {
             throw XcodeHelperError.uploadArchive(message: "You didn't provide the S3 bucket to upload to.")
@@ -326,22 +276,23 @@ public struct XCHelper : CliRunnable {
             throw XcodeHelperError.uploadArchive(message: "You didn't provide the region for the bucket.")
         }
         
-        if argumentIndex[uploadArchive.key.keys.first!]?.first != nil {
-            if let key = argumentIndex[uploadArchive.key.keys.first!]?.first {
-                guard let secret = argumentIndex[uploadArchive.secret.keys.first!]?.first else {
-                    throw XcodeHelperError.uploadArchive(message: "You didn't provide the secret for the key.")
-                }
-                try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, key: key, secret: secret)
+        if let key = argumentIndex[uploadArchive.key.keys.first!]?.first {
+            guard let secret = argumentIndex[uploadArchive.secret.keys.first!]?.first else {
+                throw XcodeHelperError.uploadArchive(message: "You didn't provide the secret for the key.")
             }
+            try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, key: key, secret: secret)
             
-        } else if argumentIndex[uploadArchive.credentialsFile.keys.first!]?.first != nil {
-            if let file = argumentIndex[uploadArchive.credentialsFile.keys.first!]?.first {
+        } else if let file = argumentIndex[uploadArchive.credentialsFile.keys.first!]?.first {
                 try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, using: file)
-            }
             
         } else {
             throw XcodeHelperError.uploadArchive(message: "You must provide either a credentials file or a key and secret")
         }
+    }
+    public var uploadArchiveOption: CliOption {
+        var uploadArchveOption = uploadArchive.command
+        uploadArchveOption.requiredArguments = [uploadArchive.bucket, uploadArchive.region]//(key,secret) OR credentials check in handler
+        return uploadArchveOption
     }
     
     // MARK: GitTag
@@ -410,6 +361,12 @@ public struct XCHelper : CliRunnable {
             print(str)
         }
     }
+    public var gitTagOption: CliOption {
+        var gitTagOption = gitTag.command
+        gitTagOption.optionalArguments = [gitTag.changeDirectory, gitTag.versionOption, gitTag.incrementOption, gitTag.pushOption]
+        gitTagOption.action = handleGitTag
+        return gitTagOption
+    }
     
     // MARK: CreateXcarchive
     struct createXcarchive {
@@ -444,5 +401,10 @@ public struct XCHelper : CliRunnable {
         }
         return try xcodeHelpable.createXcarchive(in: archivePath, with: name, from: scheme)
     }
-
+    public var createXcarchiveOption: CliOption {
+        var createXcarchiveOption = createXcarchive.command
+        createXcarchiveOption.requiredArguments = [createXcarchive.nameOption, createXcarchive.schemeOption]
+        createXcarchiveOption.action = handleCreateArchive
+        return createXcarchiveOption
+    }
 }

@@ -62,21 +62,26 @@ struct Fixture: XcodeHelpable {
         (testUploadArchiveWithCredentials?(archivePath, s3Bucket, region, credentialsPath))
     }
     
-    @discardableResult func incrementGitTag(components: [GitTagComponent], at sourcePath: String) throws -> String
+    var testIncrementGitTag: ((GitTagComponent, String) -> String)?
+    @discardableResult func incrementGitTag(component: GitTagComponent, at sourcePath: String) throws -> String
     {
-        return "1.0.0"
+        return (testIncrementGitTag?(component, sourcePath))!
     }
+    var testGitTag: ((String, String) throws -> Void)?
     func gitTag(tag: String, at sourcePath: String) throws
     {
-        
+        (try testGitTag?(tag, sourcePath))
     }
+    var testPushGitTag: ((String, String) -> Void)?
     func pushGitTag(tag: String, at sourcePath: String) throws
     {
-        
+        (testPushGitTag?(tag, sourcePath))
     }
+    
+    var testCreateXcarchive: ((String, String, String) throws -> String)?
     @discardableResult func createXcarchive(in dirPath: String, with binaryPath: String, from schemeName: String) throws -> String
     {
-        return "tmp/app.xcarchive"
+        return (try testCreateXcarchive?(dirPath, binaryPath, schemeName))!
     }
 }
 

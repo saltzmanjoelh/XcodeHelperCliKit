@@ -424,7 +424,7 @@ class XcodeHelperCliTests: XCTestCase {
             
             XCTFail("An error should have been thrown")
         }catch XcodeHelperError.uploadArchive(let message){
-            XCTAssertTrue(message.contains("secret"), "An error not providing the secret should have been thrown instead of \(message).")
+            XCTAssertTrue(message.contains("secret"), "An error about not providing the secret should have been thrown instead of \(message).")
         }catch let e{
             XCTFail("Error: \(e)")
         }
@@ -485,6 +485,259 @@ class XcodeHelperCliTests: XCTestCase {
             XCTFail("Error: \(e)")
         }
     }
+    
     //MARK: Git Tag
-    //MARK: Create Xcarchive
+    func testHandleGitTag_missingComponent(){
+        do{
+            let expectations = [XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
+            let fixture = Fixture(expectations: expectations)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
+            option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleGitTag(option: option!)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.gitTagParse(let message){
+            XCTAssertTrue(message.contains("either"), "An error about not providing a version or component should have been thrown instead of \(message).")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+
+    }
+    func testHandleGitTag_unknownValue(){
+        do{
+            let expectations = [XCHelper.gitTag.incrementOption: [UUID().uuidString],
+                                XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
+            let fixture = Fixture(expectations: expectations)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
+            option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleGitTag(option: option!)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.gitTagParse(let message){
+            XCTAssertTrue(message.contains("Unknown"), "An error about an unknown value should have been thrown instead of \(message).")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+        
+    }
+    func testHandleGitTag_version(){
+        do{
+            var didCallGitTag = false
+            let expectations = [XCHelper.gitTag.versionOption: ["9.9.9"],
+                                XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testGitTag = { (tag: String, sourcePath: String) in
+                didCallGitTag = true
+                XCTAssertEqual(tag, expectations[XCHelper.gitTag.versionOption]!.first)
+                XCTAssertEqual(sourcePath, expectations[XCHelper.gitTag.changeDirectory]!.first)
+            }
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
+            option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleGitTag(option: option!)
+            
+            XCTAssertTrue(didCallGitTag)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testHandleGitTag_incrementPatch(){
+        do{
+            var didCallIncrementGitTag = false
+            let expectations = [XCHelper.gitTag.incrementOption: ["patch"],
+                                XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String) in
+                didCallIncrementGitTag = true
+                XCTAssertEqual(component, GitTagComponent(stringValue: expectations[XCHelper.gitTag.incrementOption]!.first!))
+                XCTAssertEqual(sourcePath, expectations[XCHelper.gitTag.changeDirectory]!.first)
+                return "1.0.0"
+            }
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
+            option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleGitTag(option: option!)
+            
+            XCTAssertTrue(didCallIncrementGitTag)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testHandleGitTag_incrementMinor(){
+        do{
+            var didCallIncrementGitTag = false
+            let expectations = [XCHelper.gitTag.incrementOption: ["minor"],
+                                XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String) in
+                didCallIncrementGitTag = true
+                XCTAssertEqual(component, GitTagComponent(stringValue: expectations[XCHelper.gitTag.incrementOption]!.first!))
+                XCTAssertEqual(sourcePath, expectations[XCHelper.gitTag.changeDirectory]!.first)
+                return "1.0.0"
+            }
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
+            option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleGitTag(option: option!)
+            
+            XCTAssertTrue(didCallIncrementGitTag)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testHandleGitTag_incrementMajor(){
+        do{
+            var didCallIncrementGitTag = false
+            let expectations = [XCHelper.gitTag.incrementOption: ["major"],
+                                XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String) in
+                didCallIncrementGitTag = true
+                XCTAssertEqual(component, GitTagComponent(stringValue: expectations[XCHelper.gitTag.incrementOption]!.first!))
+                XCTAssertEqual(sourcePath, expectations[XCHelper.gitTag.changeDirectory]!.first)
+                return "1.0.0"
+            }
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
+            option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleGitTag(option: option!)
+            
+            XCTAssertTrue(didCallIncrementGitTag)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    
+    func testHandleGitTag_push(){
+        do{
+            var didCallGitPush = false
+            let expectations = [XCHelper.gitTag.versionOption: ["9.9.9"],
+                                XCHelper.gitTag.changeDirectory: ["/tmp/path"],
+                                XCHelper.gitTag.pushOption:[]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testPushGitTag = { (tag: String, sourcePath: String) in
+                didCallGitPush = true
+                XCTAssertEqual(tag, expectations[XCHelper.gitTag.versionOption]!.first)
+                XCTAssertEqual(sourcePath, expectations[XCHelper.gitTag.changeDirectory]!.first)
+            }
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
+            option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleGitTag(option: option!)
+            
+            XCTAssertTrue(didCallGitPush)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testHandleGitTag_initialTag(){
+        do{
+            var didCallGitTag = false
+            let expectations = [XCHelper.gitTag.versionOption: ["9.9.9"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testGitTag = { (tag: String, sourcePath: String) in
+                if tag == expectations[XCHelper.gitTag.versionOption]?.first!{
+                    throw XcodeHelperError.gitTag(message: "")
+                }
+                didCallGitTag = true
+                XCTAssertEqual(tag, "0.0.1")
+            }
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
+            option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleGitTag(option: option!)
+            
+            XCTAssertTrue(didCallGitTag)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    
+    //MARK: Create XCArchive
+    func testHandleCreateXcarchive_missingArchive(){
+        do{
+            let xchelper = XCHelper(xcodeHelpable: Fixture())
+            let option = xchelper.createXcarchiveOption
+            
+            _ = try xchelper.handleCreateXcarchive(option: option)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.createXcarchive(let message){
+            XCTAssertTrue(message.contains("xcarchive"), "An error about a missing xcarchive path should have been thrown.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testCreateXcarchive_missingName(){
+        do{
+            let expectations = [XCHelper.createXcarchive.command: ["/tmp/file.swift"]]
+            let fixture = Fixture(expectations: expectations)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)!.first
+            
+            _ = try xchelper.handleCreateXcarchive(option: option!)
+            
+        }catch XcodeHelperError.createXcarchive(let message){
+            XCTAssertTrue(message.contains("name"), "An error about a missing name should have been thrown.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testCreateXcarchive_missingScheme(){
+        do{
+            let expectations = [XCHelper.createXcarchive.command: ["/tmp/file.swift"],
+                                XCHelper.createXcarchive.nameOption: ["name"]]
+            let fixture = Fixture(expectations: expectations)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)!.first?
+                            .preparedWithOptionalArg(fixtureIndex: [XCHelper.createXcarchive.nameOption: expectations[XCHelper.createXcarchive.nameOption]!])
+            
+            _ = try xchelper.handleCreateXcarchive(option: option!)
+
+        }catch XcodeHelperError.createXcarchive(let message){
+            XCTAssertTrue(message.contains("scheme"), "An error about a missing scheme should have been thrown.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testCreateXcarchive(){
+        do{
+            var didCallCreateXcarchive = false
+            let expectations = [XCHelper.createXcarchive.command: ["/tmp/file.swift"],
+                                XCHelper.createXcarchive.nameOption: ["name"],
+                                XCHelper.createXcarchive.schemeOption: ["scheme"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testCreateXcarchive = { (dirPath: String, binaryPath: String, schemeName: String) in
+                didCallCreateXcarchive = true
+                XCTAssertEqual(dirPath, expectations[XCHelper.createXcarchive.command]?.first!)
+                XCTAssertEqual(binaryPath, expectations[XCHelper.createXcarchive.nameOption]?.first!)
+                XCTAssertEqual(schemeName, expectations[XCHelper.createXcarchive.schemeOption]?.first!)
+                return ""
+            }
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)!.first?
+                .preparedWithOptionalArg(fixtureIndex: [XCHelper.createXcarchive.nameOption: expectations[XCHelper.createXcarchive.nameOption]!,
+                                                        XCHelper.createXcarchive.schemeOption: expectations[XCHelper.createXcarchive.schemeOption]!])
+            
+            _ = try xchelper.handleCreateXcarchive(option: option!)
+            
+            XCTAssertTrue(didCallCreateXcarchive)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    
+    //TODO: incrementing major should reset minor and patch
+    //TODO: incrementing minor should reset patch
+    
 }

@@ -340,15 +340,17 @@ public struct XCHelper : CliRunnable {
                 guard let componentString = argumentIndex[gitTag.incrementOption.keys.first!]?.first else {
                     throw XcodeHelperError.gitTagParse(message: "You must provide either \(gitTag.versionOption.keys) OR \(gitTag.incrementOption.keys)")
                 }
-                guard let component = GitTagComponent(rawValue: componentString) else {
+                guard let component = GitTagComponent(stringValue: componentString) else {
                     throw XcodeHelperError.gitTagParse(message: "Unknown value \(componentString)")
                 }
-                versionString = try xcodeHelpable.incrementGitTag(components: [component], at: sourcePath)
+                versionString = try xcodeHelpable.incrementGitTag(component: component, at: sourcePath)
             }
 
-            if let tag = versionString, argumentIndex[gitTag.pushOption.keys.first!] != nil {
+            if let tag = versionString {
                 outputString = tag
-                try xcodeHelpable.pushGitTag(tag: tag, at: sourcePath)
+                if argumentIndex[gitTag.pushOption.keys.first!] != nil {
+                    try xcodeHelpable.pushGitTag(tag: tag, at: sourcePath)
+                }
             }
 
         } catch XcodeHelperError.gitTag(_) {
@@ -391,13 +393,13 @@ public struct XCHelper : CliRunnable {
     public func handleCreateXcarchive(option:CliOption) throws -> String {
         let argumentIndex = option.argumentIndex
         guard let archivePath = argumentIndex[createXcarchive.command.keys.first!]?.first else {
-            throw XcodeHelperError.createArchive(message: "You didn't prove the path to the xcarchive.")
+            throw XcodeHelperError.createXcarchive(message: "You didn't provide the path to the xcarchive.")
         }
         guard let name = argumentIndex[createXcarchive.nameOption.keys.first!]?.first else {
-            throw XcodeHelperError.createArchive(message: "You didn't prove the name to include in the plist.")
+            throw XcodeHelperError.createXcarchive(message: "You didn't provide the name to include in the plist.")
         }
         guard let scheme = argumentIndex[createXcarchive.schemeOption.keys.first!]?.first else {
-            throw XcodeHelperError.createArchive(message: "You didn't prove the scheme to include in the plist.")
+            throw XcodeHelperError.createXcarchive(message: "You didn't provide the scheme to include in the plist.")
         }
         return try xcodeHelpable.createXcarchive(in: archivePath, with: name, from: scheme)
     }

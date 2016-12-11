@@ -737,7 +737,4 @@ class XcodeHelperCliTests: XCTestCase {
         }
     }
     
-    //TODO: incrementing major should reset minor and patch
-    //TODO: incrementing minor should reset patch
-    
 }

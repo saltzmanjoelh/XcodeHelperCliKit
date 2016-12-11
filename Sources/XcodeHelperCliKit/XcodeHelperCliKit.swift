@@ -107,10 +107,10 @@ public struct XCHelper : CliRunnable {
                                                     requiresValue: false,
                                                     defaultValue:nil)
         static let changeDirectory      = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
-                                                description:"Change the current working directory.",
-                                                usage:nil,
-                                                requiresValue:true,
-                                                defaultValue:nil)
+                                                    description:"Change the current working directory.",
+                                                    usage:nil,
+                                                    requiresValue:true,
+                                                    defaultValue:nil)
         static let buildConfiguration   = CliOption(keys:["-c", "--build-configuration", "BUILD_CONFIGURATION"],
                                                     description:"debug or release mode",
                                                     usage: nil,

@@ -14,7 +14,7 @@ import CliRunnable
 
 //MARK: TESTS
 
-class XcodeHelperCliTests: XCTestCase {
+class XcodeHelperCliKitTests: XCTestCase {
     
     let executableRepoURL = "https://github.com/saltzmanjoelh/HelloSwift" //we use a different repo for testing because this repo isn't meant for linux
     let libraryRepoURL = "https://github.com/saltzmanjoelh/Hello"

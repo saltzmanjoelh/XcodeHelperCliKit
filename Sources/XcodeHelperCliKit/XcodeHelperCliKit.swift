@@ -48,6 +48,7 @@ public struct XCHelper : CliRunnable {
     }
     
     // MARK: UpdatePackages
+    //TODO: add option to generate new xc project
     struct updatePackages {
         static let command          = CliOption(keys: ["update-packages", "UPDATE_PACKAGES"],
                                                 description: "Update the package dependencies via 'swift package update' without breaking your file references in Xcode.",
@@ -64,6 +65,11 @@ public struct XCHelper : CliRunnable {
                                                 usage: "Just provide the one of the keys, no bool value required.",
                                                 requiresValue:false,
                                                 defaultValue: nil)
+//        static let generateProject  = CliOption(keys:["-g", "--generate", "UPDATE_PACKAGES_GENERATE_XCPROJECT"],
+//                                                description:"Generate a new Xcode project",
+//                                                usage: nil,
+//                                                requiresValue:false,
+//                                                defaultValue: nil)
         static let symlink          = CliOption(keys:["-s", "--symlink", "UPDATE_PACKAGES_SYMLINK"],
                                                 description:"Create symbolic links for the dependency 'Packages' after `swift package update` so you don't have to generate a new xcode project.",
                                                 usage: nil,
@@ -88,8 +94,14 @@ public struct XCHelper : CliRunnable {
         }
         
         try xcodeHelpable.updatePackages(at:sourcePath, forLinux:forLinux, inDockerImage: imageName)
-        if argumentIndex[updatePackages.symlink.keys.first!] != nil {
-            try xcodeHelpable.symlinkDependencies(sourcePath: sourcePath)
+        
+        if !forLinux {
+//            if argumentIndex[updatePackages.symlink.keys.first!] != nil {
+//                try xcodeHelpable.generateXcodeProject(sourcePath: sourcePath)
+//            }
+            if argumentIndex[updatePackages.symlink.keys.first!] != nil {
+                try xcodeHelpable.symlinkDependencies(sourcePath: sourcePath)
+            }
         }
     }
     public var updatePackagesOption: CliOption {
@@ -100,12 +112,17 @@ public struct XCHelper : CliRunnable {
     }
     
     // MARK: Build
+    //TODO: rename to linux-build
+    //TODO: add option -s to only build on success
+    //check BUILD_DIR/../../Logs/Build `ls -t` first item, it's gziped archive, last word in file is success or failed
     struct build {
-        static let command              = CliOption(keys: ["build", "BUILD"],
+        static let command              = CliOption(keys: ["docker-build", "BUILD"],
                                                     description: "Build a Swift package in Linux and have the build errors appear in Xcode.",
                                                     usage: "xchelper build [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue:nil)
+//        static let buildOnSuccess       = CliOption(keys:["-s", "--build-on-success"],
+//                                                    description: "Only build")
         static let changeDirectory      = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
                                                     description:"Change the current working directory.",
                                                     usage:nil,

@@ -11,6 +11,7 @@ import XcodeHelperKit
 @testable import XcodeHelperCliKit
 import SynchronousProcess
 import CliRunnable
+import DockerProcess
 
 //MARK: TESTS
 
@@ -47,7 +48,7 @@ class XcodeHelperCliKitTests: XCTestCase {
                 
             }
         }
-        let cloneResult = Process.run("/usr/bin/env", arguments: ["git", "clone", repoURL, tempDir], silenceOutput: false)
+        let cloneResult = Process.run("/usr/bin/env", arguments: ["git", "clone", repoURL, tempDir], printOutput: false)
         XCTAssert(cloneResult.exitCode == 0, "Failed to clone repo: \(cloneResult.error)")
         XCTAssert(FileManager.default.fileExists(atPath: tempDir))
         print("done cloning temp dir: \(tempDir)")
@@ -67,12 +68,12 @@ class XcodeHelperCliKitTests: XCTestCase {
         let xchelper = XCHelper(xcodeHelpable: fixture)
         
         XCTAssertEqual(xchelper.cliOptionGroups.count, 1)
-        XCTAssertEqual(xchelper.cliOptionGroups.first?.options.count, 8)
+        XCTAssertEqual(xchelper.cliOptionGroups.first?.options.count, 9)
     }
     
     func testParseSourceCodePath_custom(){
         let xchelper = XCHelper(xcodeHelpable:XcodeHelper())
-        let key = XCHelper.updatePackages.changeDirectory.keys.first!
+        let key = XCHelper.updateMacOsPackages.changeDirectory.keys.first!
         let customPath = "/tmp/path"
         let argumentIndex = [key:[customPath]]
         
@@ -82,67 +83,129 @@ class XcodeHelperCliKitTests: XCTestCase {
     }
     
     //MARK: Update Packages
-    func testHandleUpdatePackages_missingLinuxPackage() {
-        //missing linuxPackage option should still proceed, just default to false
+    func testHandleUpdateDockerPackages() {
         do{
-            
+            let path = "/tmp/\(UUID().uuidString)"
             var didCallUpdatePackages = false
-            let expectations = [XCHelper.updatePackages.changeDirectory:["/tmp"],
-                                XCHelper.updatePackages.imageName: ["image"]]
+            let expectations = [XCHelper.updateDockerPackages.changeDirectory: [path],
+                                XCHelper.updateDockerPackages.imageName: ["image"],
+                                XCHelper.updateDockerPackages.volumeName: ["platform"]]
             var fixture = Fixture(expectations: expectations)
-            fixture.testUpdatePackages = { (sourcePath:String, forLinux:Bool, imageName:String?) -> ProcessResult in
+            fixture.testUpdateDockerPackages = { (sourcePath:String, dockerImageName: String, persistentVolume: String) -> ProcessResult in
                 didCallUpdatePackages = true
-                XCTAssertFalse(forLinux, "forLinux param should have defaulted to false")
-                XCTAssertEqual(sourcePath, expectations[XCHelper.updatePackages.changeDirectory]?.first)
-                XCTAssertEqual(imageName, expectations[XCHelper.updatePackages.imageName]?.first)
+                XCTAssertEqual(sourcePath, expectations[XCHelper.updateDockerPackages.changeDirectory]?.first)
                 return emptyProcessResult
             }
             let xchelper = XCHelper(xcodeHelpable:fixture)
-            let option = xchelper.updatePackagesOption.preparedWithOptionalArg(fixtureIndex: fixture.expectations!)
+            let option = xchelper.updateDockerPackagesOption.preparedWithOptionalArg(fixtureIndex: expectations)
             
-            try xchelper.handleUpdatePackages(option: option)
+            try xchelper.handleUpdateDockerPackages(option: option)
             
-            XCTAssertTrue(didCallUpdatePackages, "Failed to call updatePackages on XcodeHelpable")
+            XCTAssertTrue(didCallUpdatePackages, "Failed to call updateDockerPackages on XcodeHelpable")
         }catch let e{
             XCTFail("Error: \(e)")
         }
     }
-    func testHandleUpdatePackages_missingImageName() {
-        
+    func testHandleUpdateDockerPackages_missingImageName() {
         do{
-            let xchelper = XCHelper(xcodeHelpable:Fixture())
-            let option = xchelper.updatePackagesOption.preparedWithOptionalArg(fixtures: [XCHelper.updatePackages.linuxPackages])
+            let path = "/tmp/\(UUID().uuidString)"
+            let expectations = [XCHelper.updateDockerPackages.changeDirectory: [path],
+                                XCHelper.updateDockerPackages.volumeName: ["platform"]]
+            let xchelper = XCHelper(xcodeHelpable: Fixture(expectations: expectations))
+            let option = xchelper.updateDockerPackagesOption.preparedWithOptionalArg(fixtureIndex: expectations)
             
-            try xchelper.handleUpdatePackages(option: option)
+            try xchelper.handleUpdateDockerPackages(option: option)
             
-            XCTFail("An error should have been thrown")
-        }catch XcodeHelperError.update(let message){
-            XCTAssertTrue(message.contains(XCHelper.updatePackages.imageName.keys.first!), "imageName error should have been thrown.")
+            XCTFail("An error should have been thrown about missing the image name.")
+        }catch XcodeHelperError.updatePackages(let message){
+            XCTAssertTrue(message.contains("image name"), "Image name error should have been thrown.")
         }catch let e{
             XCTFail("Error: \(e)")
         }
     }
-    func testHandleUpdatePackages() {
+    func testHandleUpdateDockerPackages_missingVolumeName() {
         do{
+            let path = "/tmp/\(UUID().uuidString)"
+            let expectations = [XCHelper.updateDockerPackages.changeDirectory: [path],
+                                XCHelper.updateDockerPackages.imageName: ["image"]]
+            let xchelper = XCHelper(xcodeHelpable: Fixture(expectations: expectations))
+            let option = xchelper.updateDockerPackagesOption.preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleUpdateDockerPackages(option: option)
+            
+            XCTFail("An error should have been thrown about missing the volume name.")
+        }catch XcodeHelperError.updatePackages(let message){
+            XCTAssertTrue(message.contains("volume name"), "Volume name error should have been thrown.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testHandleUpdateMacOsPackages() {
+        do{
+            let path = "/tmp/\(UUID().uuidString)"
             var didCallUpdatePackages = false
-            let expectations = [XCHelper.updatePackages.changeDirectory: ["/tmp"],
-                                 XCHelper.updatePackages.linuxPackages: ["true"],
-                                 XCHelper.updatePackages.imageName: ["image"],
-                                 XCHelper.updatePackages.symlink: []]
+            let expectations = [XCHelper.updateMacOsPackages.changeDirectory: [path]]
             var fixture = Fixture(expectations: expectations)
-            fixture.testUpdatePackages = { (sourcePath:String, forLinux:Bool, imageName:String?) -> ProcessResult in
+            fixture.testUpdateMacOsPackages = { (sourcePath:String) -> ProcessResult in
                 didCallUpdatePackages = true
-                XCTAssertEqual(sourcePath, expectations[XCHelper.updatePackages.changeDirectory]?.first)
-                XCTAssertEqual("\(forLinux)", expectations[XCHelper.updatePackages.linuxPackages]?.first)
-                XCTAssertEqual(imageName, expectations[XCHelper.updatePackages.imageName]?.first)
+                XCTAssertEqual(sourcePath, expectations[XCHelper.updateMacOsPackages.changeDirectory]?.first)
                 return emptyProcessResult
             }
             let xchelper = XCHelper(xcodeHelpable:fixture)
-            let option = xchelper.updatePackagesOption.preparedWithOptionalArg(fixtureIndex: expectations)
+            let option = xchelper.updateMacOsPackagesOption.preparedWithOptionalArg(fixtureIndex: expectations)
             
             try xchelper.handleUpdatePackages(option: option)
             
-            XCTAssertTrue(didCallUpdatePackages, "Failed to call updatePackages on XcodeHelpable")
+            XCTAssertTrue(didCallUpdatePackages, "Failed to call updateMacOsPackages on XcodeHelpable")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testHandleUpdatePackages_generateXcodeProject() {
+        do{
+            let path = "/tmp/\(UUID().uuidString)"
+            let expectations = [XCHelper.updateMacOsPackages.changeDirectory: [path],
+                                XCHelper.updateMacOsPackages.generateXcodeProject: [path]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testUpdateMacOsPackages = { (sourcePath:String) -> ProcessResult in
+                return emptyProcessResult
+            }
+            var didCallGenerateXcodeProject = false
+            fixture.testGenerateXcodeProject = { (sourcePath:String) -> ProcessResult in
+                didCallGenerateXcodeProject = true
+                XCTAssertEqual(sourcePath, path)
+                return emptyProcessResult
+            }
+            let xchelper = XCHelper(xcodeHelpable:fixture)
+            let option = xchelper.updateMacOsPackagesOption.preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleUpdatePackages(option: option)
+
+            XCTAssertTrue(didCallGenerateXcodeProject, "Failed to call generateXcodeProject on XcodeHelpable")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testHandleUpdatePackages_symlinkDependencies() {
+        do{
+            let path = "/tmp/\(UUID().uuidString)"
+            let expectations = [XCHelper.updateMacOsPackages.changeDirectory: [path],
+                                XCHelper.updateMacOsPackages.symlink: [path]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testUpdateMacOsPackages = { (sourcePath:String) -> ProcessResult in
+                return emptyProcessResult
+            }
+            var didCallSymlinkDependencies = false
+            fixture.testSymlinkDependencies = { (sourcePath:String) -> Void in
+                didCallSymlinkDependencies = true
+                XCTAssertEqual(sourcePath, path)
+            }
+            let xchelper = XCHelper(xcodeHelpable:fixture)
+            let option = xchelper.updateMacOsPackagesOption.preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleUpdatePackages(option: option)
+            
+            XCTAssertTrue(didCallSymlinkDependencies, "Failed to call symlinkDependencies on XcodeHelpable")
         }catch let e{
             XCTFail("Error: \(e)")
         }
@@ -150,17 +213,18 @@ class XcodeHelperCliKitTests: XCTestCase {
     
     private func buildConfigurationTest(buildConfiguration: BuildConfiguration){
         do{
-            let expectations = [XCHelper.build.buildConfiguration: ["\(buildConfiguration)"],
-                                XCHelper.build.imageName: ["image"]]
+            let expectations = [XCHelper.dockerBuild.buildConfiguration: ["\(buildConfiguration)"],
+                                XCHelper.dockerBuild.imageName: ["image"]]
             var fixture = Fixture(expectations: expectations)
-            fixture.testBuild = { (sourcePath: String, configuration:BuildConfiguration, imageName: String, removeWhenDone: Bool) in
-                XCTAssertEqual(configuration, buildConfiguration)
+            //dockerBuild() throws -> ProcessResult
+            fixture.testDockerBuild = { (sourcePath: String, with: [DockerRunOption]?, using: BuildConfiguration, in: String, persistentBuildDirectory: String?) -> ProcessResult in
+                XCTAssertEqual(using, buildConfiguration)
                 return emptyProcessResult
             }
             let xchelper = XCHelper(xcodeHelpable:fixture)
-            let option = xchelper.buildOption.preparedWithOptionalArg(fixtureIndex: expectations)
+            let option = xchelper.dockerBuildOption.preparedWithOptionalArg(fixtureIndex: expectations)
             
-            try xchelper.handleBuild(option: option)
+            try xchelper.handleDockerBuild(option: option)
             
         }catch let e{
             XCTFail("Error: \(e)")
@@ -177,11 +241,11 @@ class XcodeHelperCliKitTests: XCTestCase {
     func testHandleBuild_missingBuildConfiguration() {
         do{
             let xchelper = XCHelper(xcodeHelpable:Fixture())
-            let option = xchelper.buildOption
-            try xchelper.handleBuild(option: option)
+            let option = xchelper.dockerBuildOption
+            try xchelper.handleDockerBuild(option: option)
             
-        }catch XcodeHelperError.build(let message, _){
-            XCTAssertTrue(message.contains(XCHelper.build.buildConfiguration.keys.first!), "buildConfiguration error should have been thrown.")
+        }catch XcodeHelperError.dockerBuild(let message, _){
+            XCTAssertTrue(message.contains(XCHelper.dockerBuild.buildConfiguration.keys.first!), "buildConfiguration error should have been thrown.")
         }catch let e{
             XCTFail("Error: \(e)")
         }
@@ -189,43 +253,170 @@ class XcodeHelperCliKitTests: XCTestCase {
     func testHandleBuild_missingImageName() {
         do{
             let xchelper = XCHelper(xcodeHelpable:Fixture())
-            var option = xchelper.buildOption
+            var option = xchelper.dockerBuildOption
             option.optionalArguments = prepare(options: option.optionalArguments,
-                                               with: [XCHelper.build.buildConfiguration: ["\(BuildConfiguration.debug)"]])
+                                               with: [XCHelper.dockerBuild.buildConfiguration: ["\(BuildConfiguration.debug)"]])
             
-            try xchelper.handleBuild(option: option)
+            try xchelper.handleDockerBuild(option: option)
             
             XCTFail("An error should have been thrown")
-        }catch XcodeHelperError.build(let message, _){
-            XCTAssertTrue(message.contains(XCHelper.build.imageName.keys.first!), "imageName error should have been thrown.")
+        }catch XcodeHelperError.dockerBuild(let message, _){
+            XCTAssertTrue(message.contains(XCHelper.dockerBuild.imageName.keys.first!), "imageName error should have been thrown.")
         }catch let e{
             XCTFail("Error: \(e)")
         }
     }
-    func testHandleBuild() {
+    func testHandleBuild_buildOnSuccessFailure() {
         do{
-            var didCallBuild = false
-            let expectations = [XCHelper.build.buildConfiguration: ["\(BuildConfiguration.debug)"],
-                                XCHelper.build.changeDirectory: ["/tmp"],
-                                XCHelper.build.imageName: ["image"]]
-            var fixture = Fixture(expectations:expectations)
-            fixture.testBuild = { (sourcePath: String, configuration:BuildConfiguration, imageName: String, removeWhenDone: Bool) in
-                didCallBuild = true
-                XCTAssertEqual("\(configuration)", expectations[XCHelper.build.buildConfiguration]?.first!)
-                XCTAssertEqual(sourcePath, expectations[XCHelper.build.changeDirectory]?.first!)
-                XCTAssertEqual(imageName, expectations[XCHelper.build.imageName]?.first!)
+            let path = "/tmp/\(UUID().uuidString)"
+            let expectations = [XCHelper.dockerBuild.changeDirectory: [path],
+                                XCHelper.dockerBuild.buildConfiguration: ["\(BuildConfiguration.debug)"],
+                                XCHelper.dockerBuild.imageName: ["image"],
+                                XCHelper.dockerBuild.volumeName: ["platform"],
+                                XCHelper.dockerBuild.buildOnSuccess: ["/tmp"]]
+            var fixture = Fixture(expectations: expectations)
+            fixture.testDockerBuild = { (_: String, with: [DockerRunOption]?, using: BuildConfiguration, in: String, persistentVolumeName: String?) -> ProcessResult in
+                XCTFail("dockerBuild should NOT have been called.")
                 return emptyProcessResult
             }
             let xchelper = XCHelper(xcodeHelpable:fixture)
-            let option = xchelper.buildOption.preparedWithOptionalArg(fixtureIndex: expectations)
+            let option = xchelper.dockerBuildOption.preparedWithOptionalArg(fixtureIndex: expectations)
             
-            try xchelper.handleBuild(option: option)
-
-            XCTAssertTrue(didCallBuild, "Failed to call build on xcodeHelpable.")
+            try xchelper.handleDockerBuild(option: option)
+            
         }catch let e{
             XCTFail("Error: \(e)")
         }
     }
+    func testLastBuildWasSuccess() {
+        do{
+            let xchelper = XCHelper(xcodeHelpable:Fixture())
+            let buildURL = getCurrentBuildURL()
+            
+            let result = try xchelper.lastBuildWasSuccess(at: buildURL!)
+            
+            XCTAssertTrue(result)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    //XcodeHelperCliKit..lastBuildWasSuccess
+    func testLastBuildWasSuccess_missingLogURL(){
+        do{
+            let xchelper = XCHelper(xcodeHelpable:Fixture())
+            
+            let result = try xchelper.lastBuildWasSuccess(at: URL.init(fileURLWithPath: UUID().uuidString))
+            
+            XCTAssertFalse(result)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testXcodeBuildLogDirectory(){
+        let xcodeBuildDir = "/target/Build/Products/"
+        let xchelper = XCHelper(xcodeHelpable:Fixture())
+        
+        let result = xchelper.xcodeBuildLogDirectory(from: xcodeBuildDir)
+        
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result!.path, "/target/Logs/Build")
+    }
+    
+    func testURLOfLastBuildLog_noFiles(){
+        let xchelper = XCHelper(xcodeHelpable:Fixture())
+        guard let buildURL = getCurrentBuildURL() else {//get the build directory for this
+            XCTFail("Failed to find XcodeHelperCli build directory")
+            return
+        }
+        //clear all logs
+        Process.run("/bin/bash", arguments: ["-c", "cd \(buildURL.path) && rm *.xcactivitylog"])
+        
+        let result = xchelper.URLOfLastBuildLog(at: buildURL)//get the most recent build log
+        
+        XCTAssertNil(result)
+    }
+    
+    func getCurrentBuildURL() -> URL? {
+        //maybe look at prefs later
+        var derivedDataURL: URL
+        if #available(OSX 10.12, *) {
+            derivedDataURL = FileManager.default.homeDirectoryForCurrentUser
+                                .appendingPathComponent("Library", isDirectory: true)
+                                .appendingPathComponent("Developer", isDirectory: true)
+                                .appendingPathComponent("Xcode", isDirectory: true)
+                                .appendingPathComponent("DerivedData", isDirectory: true)
+        } else {
+            // Fallback on earlier versions
+            derivedDataURL = URL(fileURLWithPath: "~/Library/Developer/Xcode/DerivedData")
+        }
+        
+        for directory in FileManager.default.subpaths(atPath: derivedDataURL.path)! {
+            if directory.hasPrefix("XcodeHelperCli") {
+                return derivedDataURL.appendingPathComponent(directory, isDirectory: true)
+                        .appendingPathComponent("Logs", isDirectory: true)
+                        .appendingPathComponent("Build", isDirectory: true) 
+            }
+        }
+        return nil
+    }
+    
+    func testDecodeXcactivityLog() {
+        let xchelper = XCHelper(xcodeHelpable:Fixture())
+        guard let buildURL = getCurrentBuildURL() else {//get the build directory for this
+            XCTFail("Failed to find XcodeHelperCli build directory")
+            return
+        }
+        let log = xchelper.URLOfLastBuildLog(at: buildURL)//get the most recent build log
+        
+        do{
+            let result = try xchelper.decode(xcactivityLog: URL.init(fileURLWithPath: log!.path))
+            
+            XCTAssertEqual(result, "succeeded") //it should contain "succeeded" in order for this test to run
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testDecodeXcactivityLog_invalidFile() {
+        do{
+            let xchelper = XCHelper(xcodeHelpable:Fixture())
+            
+            _ = try xchelper.decode(xcactivityLog: URL.init(fileURLWithPath: "/tmp/invalid"))
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperCliError.xcactivityLogDecode(_){
+            
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+        
+    }
+    
+    func testHandleDockerBuild() {
+        do{
+            let expectations = [XCHelper.dockerBuild.buildConfiguration: ["\(BuildConfiguration.debug)"],
+                                XCHelper.dockerBuild.changeDirectory: ["/tmp"],
+                                XCHelper.dockerBuild.imageName: ["image"],
+                                XCHelper.dockerBuild.buildOnSuccess: [getCurrentBuildURL()!.path]]
+            var fixture = Fixture(expectations:expectations)
+            var didCallDockerBuild = false
+            fixture.testDockerBuild = { (sourcePath: String, withDockerRunOptions: [DockerRunOption]?, usingBuildConfiguration: BuildConfiguration, inDockerImage: String, persistentBuildDirectory: String?) -> ProcessResult in
+                didCallDockerBuild = true
+                XCTAssertEqual("\(usingBuildConfiguration)", expectations[XCHelper.dockerBuild.buildConfiguration]?.first!)
+                XCTAssertEqual(sourcePath, expectations[XCHelper.dockerBuild.changeDirectory]?.first!)
+                XCTAssertEqual(inDockerImage, expectations[XCHelper.dockerBuild.imageName]?.first!)
+                return emptyProcessResult
+            }
+            let xchelper = XCHelper(xcodeHelpable:fixture)
+            let option = xchelper.dockerBuildOption.preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleDockerBuild(option: option)
+
+            XCTAssertTrue(didCallDockerBuild, "Failed to call dockerBuild on xcodeHelpable.")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    
     
     //MARK: Clean
     func testHandleClean() {

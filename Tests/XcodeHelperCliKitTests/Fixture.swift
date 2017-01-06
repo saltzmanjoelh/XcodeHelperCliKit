@@ -11,25 +11,35 @@ import XcodeHelperKit
 @testable import XcodeHelperCliKit
 import SynchronousProcess
 import CliRunnable
+import DockerProcess
 
 let emptyProcessResult = ProcessResult(output:nil, error:nil, exitCode:0)
 struct Fixture: XcodeHelpable {
+    
+
+    
     var expectations: [CliOption: [String]]?
     init(){}
     init(expectations:[CliOption: [String]]){
         self.expectations = expectations
     }
     
-    var testUpdatePackages: ((String, Bool, String) -> ProcessResult)?
-    @discardableResult func updatePackages(at sourcePath: String, forLinux: Bool, inDockerImage imageName: String) throws -> ProcessResult
+    var testUpdateMacOsPackages: ((String) -> ProcessResult)?
+    @discardableResult
+    public func updateMacOsPackages(at sourcePath: String) throws -> ProcessResult
     {
-        return (testUpdatePackages?(sourcePath, forLinux, imageName))!
+        return (testUpdateMacOsPackages?(sourcePath))!
     }
     
-    var testBuild: ((String, BuildConfiguration, String, Bool) -> ProcessResult)?
-    @discardableResult func build(source sourcePath: String, usingConfiguration configuration:BuildConfiguration, inDockerImage imageName: String, removeWhenDone: Bool) throws -> ProcessResult
-    {
-        return (testBuild?(sourcePath, configuration, imageName, removeWhenDone))!
+    var testUpdateDockerPackages: ((String, String, String) -> ProcessResult)?
+    @discardableResult
+    public func updateDockerPackages(at sourcePath: String, in dockerImageName: String, with persistentVolumeName: String) throws -> ProcessResult {
+        return (testUpdateDockerPackages?(sourcePath, dockerImageName, persistentVolumeName))!
+    }
+    
+    var testDockerBuild: ((String, [DockerRunOption]?, BuildConfiguration, String, String?) -> ProcessResult)?
+    @discardableResult  func dockerBuild(_ sourcePath: String, with runOptions: [DockerRunOption]?, using configuration: BuildConfiguration, in dockerImageName: String, persistentVolumeName persistentBuildDirectory: String?) throws -> ProcessResult {
+        return (testDockerBuild?(sourcePath, runOptions, configuration, dockerImageName, persistentBuildDirectory))!
     }
     
     var testClean: ((String) -> ProcessResult)?
@@ -39,9 +49,14 @@ struct Fixture: XcodeHelpable {
     }
     
     var testSymlinkDependencies: ((String) -> Void)?
-    @discardableResult func symlinkDependencies(sourcePath: String) throws
+    @discardableResult func symlinkDependencies(at sourcePath: String) throws
     {
         testSymlinkDependencies?(sourcePath)
+    }
+    
+    var testGenerateXcodeProject: ((String) -> ProcessResult )?
+    @discardableResult func generateXcodeProject(at sourcePath: String) throws -> ProcessResult {
+        return (testGenerateXcodeProject?(sourcePath))!
     }
     
     var testCreateArchive: ((String, [String], Bool) -> ProcessResult)?
@@ -68,7 +83,7 @@ struct Fixture: XcodeHelpable {
         return (testIncrementGitTag?(component, sourcePath))!
     }
     var testGitTag: ((String, String) throws -> Void)?
-    func gitTag(tag: String, at sourcePath: String) throws
+    func gitTag(_ tag: String, repo sourcePath: String) throws
     {
         (try testGitTag?(tag, sourcePath))
     }

@@ -1,5 +1,5 @@
 //
-//  Fixture.swift
+//  XcodeHelpableFixture.swift
 //  XcodeHelperCli
 //
 //  Created by Joel Saltzman on 11/24/16.
@@ -14,9 +14,7 @@ import CliRunnable
 import DockerProcess
 
 let emptyProcessResult = ProcessResult(output:nil, error:nil, exitCode:0)
-struct Fixture: XcodeHelpable {
-    
-
+struct XcodeHelpableFixture: XcodeHelpable {
     
     var expectations: [CliOption: [String]]?
     init(){}
@@ -31,10 +29,10 @@ struct Fixture: XcodeHelpable {
         return (testUpdateMacOsPackages?(sourcePath))!
     }
     
-    var testUpdateDockerPackages: ((String, String, String) -> ProcessResult)?
+    var testUpdateDockerPackages: ((String, String) -> ProcessResult)?
     @discardableResult
     public func updateDockerPackages(at sourcePath: String, in dockerImageName: String, with persistentVolumeName: String) throws -> ProcessResult {
-        return (testUpdateDockerPackages?(sourcePath, dockerImageName, persistentVolumeName))!
+        return (testUpdateDockerPackages?(sourcePath, dockerImageName))!
     }
     
     var testDockerBuild: ((String, [DockerRunOption]?, BuildConfiguration, String, String?) -> ProcessResult)?

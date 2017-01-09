@@ -116,15 +116,17 @@ public struct XCHelper : CliRunnable {
                                                 usage: nil,
                                                 requiresValue:true,
                                                 defaultValue:"saltzmanjoelh/swiftubuntu")
+        // The combination of `swift package update` and persistentVolume caused "segmentation fault" and swift compiler crashes
+        // For now, when we update packages in Docker we should delete all existing packages first. ie: don't persist Packges directory
         static let volumeName       = CliOption(keys:["-v", "--volume", "UPDATE_DOCKER_PACKAGES_PERSISTENT_VOLUME"],
-                                                description:"Use a persistent volume to store the .build artifacts and Packages so that everything doesn't have to be built from scratch each time. A persistent volume is required when calling update-docker-packages so that we don't mix macOS packages with packages from another platform.",
+                                                description:"For now when updating Docker packages, the macOS packages will be renamed, Docker packages update and macOS packages restored.",
                                                 usage: nil,
                                                 requiresValue:true,
-                                                defaultValue:"saltzmanjoelh/swiftubuntu")
+                                                defaultValue: "Docker")
     }
     public var updateDockerPackagesOption: CliOption {
-        var updateOption = updateMacOsPackages.command
-        updateOption.requiredArguments = [updateDockerPackages.imageName, updateDockerPackages.volumeName]
+        var updateOption = updateDockerPackages.command
+        updateOption.requiredArguments = [updateDockerPackages.imageName]
         updateOption.optionalArguments = [updateDockerPackages.changeDirectory]
         updateOption.action = handleUpdateDockerPackages
         return updateOption
@@ -147,7 +149,7 @@ public struct XCHelper : CliRunnable {
                                                     description: "Build a Swift package in Linux and have the build errors appear in Xcode.",
                                                     usage: "xchelper build [OPTIONS]",
                                                     requiresValue: false,
-                                                    defaultValue:nil)
+                                                    defaultValue: nil)
         static let buildOnSuccess       = CliOption(keys: ["-s", "--after-success", "DOCKER_BUILD_AFTER_SUCCESS"],
                                                     description: "Only build after a successful macOS build. This helps reduce duplicate errors in Xcode from multiple platforms.",
                                                     usage: nil,
@@ -155,24 +157,26 @@ public struct XCHelper : CliRunnable {
                                                     defaultValue: ProcessInfo.processInfo.environment["BUILD_DIR"])
         static let changeDirectory      = CliOption(keys:["-d", "--chdir", "DOCKER_BUILD_XCHELPER_CHDIR"],
                                                     description:"Change the current working directory.",
-                                                    usage:nil,
-                                                    requiresValue:true,
-                                                    defaultValue:nil)
+                                                    usage: nil,
+                                                    requiresValue: true,
+                                                    defaultValue: nil)
         static let buildConfiguration   = CliOption(keys:["-c", "--build-configuration", "DOCKER_BUILD_CONFIGURATION"],
                                                     description:"debug or release mode",
                                                     usage: nil,
-                                                    requiresValue:true,
+                                                    requiresValue: true,
                                                     defaultValue:"debug")
         static let imageName            = CliOption(keys:["-i", "--image-name", "DOCKER_BUILD_IMAGE_NAME"],
                                                     description:"The Docker image name to run the commands in",
                                                     usage: nil,
-                                                    requiresValue:true,
+                                                    requiresValue: true,
                                                     defaultValue:"saltzmanjoelh/swiftubuntu")
-        static let volumeName  = CliOption(keys:["-v", "--persistent-volume", "DOCKER_BUILD_PERSISTENT"],
+        
+        //TODO: make sure all volumeName options have the same keys
+        static let volumeName  = CliOption(keys:["-v", "--persistent-volume", "DOCKER_BUILD_PERSISTENT_VOLUME"],
                                                     description:"Create a subdirectory in the .build directory. This separates the macOS build files from docker build files to make builds faster for each platform.",
                                                     usage: "-v [PLATFORM_NAME] ie: -v android",
-                                                    requiresValue:true,
-                                                    defaultValue:"saltzmanjoelh/swiftubuntu")
+                                                    requiresValue: true,
+                                                    defaultValue: nil)
         
     }
     public var dockerBuildOption: CliOption {

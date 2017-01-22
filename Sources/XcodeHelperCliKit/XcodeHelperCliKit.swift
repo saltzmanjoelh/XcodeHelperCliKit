@@ -25,7 +25,7 @@ public struct XCHelper : CliRunnable {
     
     public var xcodeHelpable: XcodeHelpable
     
-    public init(xcodeHelpable:XcodeHelpable) {
+    public init(xcodeHelpable:XcodeHelpable = XcodeHelper()) {
         self.xcodeHelpable = xcodeHelpable
     }
     
@@ -57,15 +57,24 @@ public struct XCHelper : CliRunnable {
                                    options:[updateMacOsPackagesOption, updateDockerPackagesOption, dockerBuildOption, cleanOption, symlinkDependenciesOption, createArchiveOption, uploadArchiveOption, gitTagOption, createXcarchiveOption])]
         }
     }
+    public var environmentKeys: [String] {
+        return cliOptionGroups.flatMap{ (optionGroup: CliOptionGroup) in
+            return optionGroup.options.flatMap{ (option: CliOption) in
+                return option.allKeys.filter{ (key: String) -> Bool in
+                    return key.uppercased() == key
+                }
+            }
+        }
+    }
     
     // MARK: UpdatePackages
     struct updateMacOsPackages {
-        static let command          = CliOption(keys: ["update-packages", "UPDATE_PACKAGES"],
+        static let command          = CliOption(keys: ["update-macos-packages", "UPDATE_MACOS_PACKAGES"],
                                                 description: "Update the package dependencies via 'swift package update' without breaking your file references in Xcode.",
                                                 usage: "xchelper update-packages [OPTIONS]",
                                                 requiresValue: false,
                                                 defaultValue:nil)
-        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
+        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "UPDATE_MACOS_PACKAGES_CHDIR"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
                                                 requiresValue:true,
@@ -106,7 +115,7 @@ public struct XCHelper : CliRunnable {
                                                 usage: "xchelper update-docker-packages [OPTIONS]",
                                                 requiresValue: false,
                                                 defaultValue:nil)
-        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
+        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "UPDATE_DOCKER_PACKAGES_CHDIR"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
                                                 requiresValue:true,
@@ -155,7 +164,7 @@ public struct XCHelper : CliRunnable {
                                                     usage: nil,
                                                     requiresValue: false,
                                                     defaultValue: ProcessInfo.processInfo.environment["BUILD_DIR"])
-        static let changeDirectory      = CliOption(keys:["-d", "--chdir", "DOCKER_BUILD_XCHELPER_CHDIR"],
+        static let changeDirectory      = CliOption(keys:["-d", "--chdir", "DOCKER_BUILD_CHDIR"],
                                                     description:"Change the current working directory.",
                                                     usage: nil,
                                                     requiresValue: true,
@@ -253,7 +262,7 @@ public struct XCHelper : CliRunnable {
                                                     usage: "xchelper clean [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue:nil)
-        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
+        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "CLEAN_CHDIR"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
                                                 requiresValue:true,
@@ -279,7 +288,7 @@ public struct XCHelper : CliRunnable {
                                                     usage: "xchelper symlink-dependencies [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue:nil)
-        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
+        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "SYMLINK_DEPENDENCIES_CHDIR"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
                                                 requiresValue:true,
@@ -410,7 +419,7 @@ public struct XCHelper : CliRunnable {
                                                     usage: "xchelper git-tag [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue: nil)
-        static let changeDirectory      = CliOption(keys:["-d", "--chdir", "XCHELPER_CHDIR"],
+        static let changeDirectory      = CliOption(keys:["-d", "--chdir", "GIT_TAG_CHDIR"],
                                                     description:"Change the current working directory.",
                                                     usage:nil,
                                                     requiresValue:true,

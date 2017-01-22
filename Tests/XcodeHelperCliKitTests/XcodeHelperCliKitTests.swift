@@ -927,4 +927,13 @@ class XcodeHelperCliKitTests: XCTestCase {
         }
     }
     
+    
+    func testAllEnvironmentKeysAreUnique(){
+        let xchelper = XCHelper()
+        var allKeys = Set<String>()
+        for key in xchelper.environmentKeys {
+            XCTAssert(!allKeys.contains(key), "\(key) is in set: \(allKeys)")
+            allKeys.insert(key)
+        }
+    }
 }

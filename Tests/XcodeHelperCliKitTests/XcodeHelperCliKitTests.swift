@@ -391,6 +391,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     }
     
     func testHandleDockerBuild() {
+        guard ProcessInfo.processInfo.environment["TRAVIS_OS_NAME"] == nil else { return }
         do{
             let expectations = [XCHelper.dockerBuild.buildConfiguration: ["\(BuildConfiguration.debug)"],
                                 XCHelper.dockerBuild.changeDirectory: ["/tmp"],

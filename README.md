@@ -1,3 +1,7 @@
+#XcodeHelperCli
+
+[![Build Status][image-1]][1] [![Swift Version][image-2]][2]
+
 XcodeHelperCli keeps you in Xcode and off the command line. It's built from [XcodeHelperKit](https://www.github.com/saltzmanjoelh/XcodeHelperKit). 
 
 - [Build and run tests on Linux through Docker](#build-and-run-tests-on-linux-through-docker)
@@ -130,3 +134,8 @@ Please note the use of `xcrun`. You can use this if you get any errors like `can
 Use `create-archive` and `upload-archive` to help get your files to an S3 bucket. You might use this if you are using CodeDeploy or something similar to monitor an S3 bucket for continuous integration.
 
 
+[1]:	https://travis-ci.org/saltzmanjoelh/XcodeHelperCli
+[2]:	https://swift.org "Swift"
+
+[image-1]:	https://travis-ci.org/saltzmanjoelh/XcodeHelperCli.svg?branch=master
+[image-2]:	https://img.shields.io/badge/swift-version%203-blue.svg

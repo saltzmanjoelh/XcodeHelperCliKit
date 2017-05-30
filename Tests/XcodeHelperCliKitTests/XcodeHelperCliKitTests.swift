@@ -365,7 +365,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     }
     
     func testDecodeXcactivityLog() {
-        guard ProcessInfo.processInfo.environment["TRAVIS_OS_NAME"] == nil else { return nil }
+        guard ProcessInfo.processInfo.environment["TRAVIS_OS_NAME"] == nil else { return }
         let xchelper = XCHelper(xcodeHelpable:XcodeHelpableFixture())
         guard let buildURL = getCurrentBuildURL() else {//get the build directory for this
             XCTFail("Failed to find XcodeHelperCli build directory")

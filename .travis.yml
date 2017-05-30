@@ -1,6 +1,4 @@
 language: objective-c
 osx_image: xcode8.2
-xcode_project: XcodeHelperCli.xcodeproj
-xcode_scheme: XcodeHelperCli
-# script:
-#   - "swift test"
+script:
+  - "swift test"

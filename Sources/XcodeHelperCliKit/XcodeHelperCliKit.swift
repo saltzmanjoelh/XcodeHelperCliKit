@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import ProcessRunner
 import XcodeHelperKit
 import CliRunnable
 
@@ -149,7 +150,7 @@ public struct XCHelper : CliRunnable {
         guard let volumeName = argumentIndex[updateDockerPackages.volumeName.keys.first!]?.first else {
             throw XcodeHelperError.updatePackages(message: "You must provide an persistent volume name when updating Docker packages")
         }
-        try xcodeHelpable.updateDockerPackages(at: sourcePath, in: imageName, with: volumeName)
+        try xcodeHelpable.updateDockerPackages(at: sourcePath, inImage: imageName, withVolume: volumeName)
     }
     
     // MARK: DockerBuild
@@ -235,7 +236,7 @@ public struct XCHelper : CliRunnable {
     }
     func URLOfLastBuildLog(at xcodeBuildDirURL: URL) -> URL? {
         //get a list of the files sorted DESC
-        let result = Process.run("/bin/ls", arguments: ["-t1", xcodeBuildDirURL.path], printOutput: false, outputPrefix: nil)
+        let result = ProcessRunner.synchronousRun("/bin/ls", arguments: ["-t1", xcodeBuildDirURL.path])
         //filter xcactivitylogs and get the first one
         guard let log = result.output?.components(separatedBy: "\n").flatMap({ $0.hasSuffix(".xcactivitylog") ? $0 : nil }).first else {
             return nil
@@ -243,8 +244,8 @@ public struct XCHelper : CliRunnable {
         return xcodeBuildDirURL.appendingPathComponent(log)
     }
     func decode(xcactivityLog: URL) throws -> String? {
-        let result = Process.run("/usr/bin/gunzip", arguments: ["-cd", xcactivityLog.path], printOutput: false, outputPrefix: nil)
-        guard let output = result.output else {
+        let result = ProcessRunner.synchronousRun("/usr/bin/gunzip", arguments: ["-cd", xcactivityLog.path], printOutput: false, outputPrefix: nil)
+        guard let output = result.output, output.characters.count > 0 else {
             throw XcodeHelperCliError.xcactivityLogDecode(message: result.error!)
         }
         let start = output.index(output.endIndex, offsetBy: -9) // succeeded
@@ -492,14 +493,14 @@ public struct XCHelper : CliRunnable {
         
         static let command              = CliOption(keys: ["create-xcarchive", "CREATE_XCARCHIVE"],
                                                     description: "Store your built binary in an xcarchive where Xcode's Organizer can keep track",
-                                                    usage: "xchelper create-xcarchive-plist XCARCHIVE_PATH [OPTIONS]. XCARCHIVE_PATH is the directory (.xcarchive) where you want the Info.plist created in. ",
+                                                    usage: "xchelper create-xcarchive XCARCHIVE_PATH [OPTIONS]. XCARCHIVE_PATH is the directory (.xcarchive) where you want the Info.plist created in. ",
                                                     requiresValue: true,
                                                     defaultValue: nil)
-        static let nameOption          = CliOption(keys: ["-n", "--name", "CREATE_PLIST_APP_NAME"],
-                                                   description: "The app name to include in the `Name` field of the Info.plist.",
-                                                   usage: nil,
-                                                   requiresValue: true,
-                                                   defaultValue: nil)
+//        static let nameOption          = CliOption(keys: ["-n", "--name", "CREATE_PLIST_APP_NAME"],
+//                                                   description: "The app name to include in the `Name` field of the Info.plist.",
+//                                                   usage: nil,
+//                                                   requiresValue: true,
+//                                                   defaultValue: nil)
         static let schemeOption          = CliOption(keys: ["-s", "--scheme", "CREATE_PLIST_SCHEME"],
                                                      description: "The scheme name to include in the `Scheme` field of the Info.plist.",
                                                      usage: nil,
@@ -508,23 +509,31 @@ public struct XCHelper : CliRunnable {
     }
     public var createXcarchiveOption: CliOption {
         var createXcarchiveOption = createXcarchive.command
-        createXcarchiveOption.requiredArguments = [createXcarchive.nameOption, createXcarchive.schemeOption]
-        createXcarchiveOption.action = handleCreateArchive
+        createXcarchiveOption.requiredArguments = [createXcarchive.schemeOption]//createXcarchive.nameOption,
+        createXcarchiveOption.action = handleCreateXcarchive
         return createXcarchiveOption
     }
     //returns the path to the new xcarchive
-    public func handleCreateXcarchive(option:CliOption) throws -> String {
+    public func handleCreateXcarchive(option:CliOption) throws {
         let argumentIndex = option.argumentIndex
-        guard let archivePath = argumentIndex[createXcarchive.command.keys.first!]?.first else {
-            throw XcodeHelperError.createXcarchive(message: "You didn't provide the path to the xcarchive.")
+        guard var paths = argumentIndex[createXcarchive.command.keys.first!] else {
+            throw XcodeHelperError.createXcarchive(message: "You didn't provide any paths.")
         }
-        guard let name = argumentIndex[createXcarchive.nameOption.keys.first!]?.first else {
-            throw XcodeHelperError.createXcarchive(message: "You didn't provide the name to include in the plist.")
+        guard let archivePath = paths.first else {
+            throw XcodeHelperError.createXcarchive(message: "You didn't provide the archive path.")
         }
+        guard paths.count > 1 else {
+            throw XcodeHelperError.createXcarchive(message: "You didn't provide the path to the binary which you want to archive.")
+        }
+//        guard let name = argumentIndex[createXcarchive.nameOption.keys.first!]?.first else {
+//            throw XcodeHelperError.createXcarchive(message: "You didn't provide the name to include in the plist.")
+//        }
         guard let scheme = argumentIndex[createXcarchive.schemeOption.keys.first!]?.first else {
             throw XcodeHelperError.createXcarchive(message: "You didn't provide the scheme to include in the plist.")
         }
-        return try xcodeHelpable.createXcarchive(in: archivePath, with: name, from: scheme)
+        paths.removeFirst()
+        let outputString = try xcodeHelpable.createXcarchive(in: archivePath, with: paths.first!, from: scheme)
+        print(outputString)
     }
     
 }

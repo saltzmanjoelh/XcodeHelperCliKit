@@ -7,14 +7,15 @@
 //
 
 import XCTest
-import XcodeHelperKit
-@testable import XcodeHelperCliKit
-import SynchronousProcess
+import ProcessRunner
 import CliRunnable
 import DockerProcess
+import XcodeHelperKit
+@testable import XcodeHelperCliKit
 
 let emptyProcessResult = ProcessResult(output:nil, error:nil, exitCode:0)
 struct XcodeHelpableFixture: XcodeHelpable {
+
     
     var expectations: [CliOption: [String]]?
     init(){}
@@ -31,7 +32,7 @@ struct XcodeHelpableFixture: XcodeHelpable {
     
     var testUpdateDockerPackages: ((String, String) -> ProcessResult)?
     @discardableResult
-    public func updateDockerPackages(at sourcePath: String, in dockerImageName: String, with persistentVolumeName: String) throws -> ProcessResult {
+    public func updateDockerPackages(at sourcePath: String, inImage dockerImageName: String, withVolume persistentVolumeName: String) throws -> ProcessResult {
         return (testUpdateDockerPackages?(sourcePath, dockerImageName))!
     }
     
@@ -47,7 +48,7 @@ struct XcodeHelpableFixture: XcodeHelpable {
     }
     
     var testSymlinkDependencies: ((String) -> Void)?
-    @discardableResult func symlinkDependencies(at sourcePath: String) throws
+    func symlinkDependencies(at sourcePath: String) throws
     {
         testSymlinkDependencies?(sourcePath)
     }
@@ -64,13 +65,13 @@ struct XcodeHelpableFixture: XcodeHelpable {
     }
     
     var testUploadArchive: ((String, String, String, String, String) -> Void)?
-    @discardableResult func uploadArchive(at archivePath: String, to s3Bucket: String, in region: String, key: String, secret: String) throws
+    func uploadArchive(at archivePath: String, to s3Bucket: String, in region: String, key: String, secret: String) throws
     {
         (testUploadArchive?(archivePath, s3Bucket, region, key, secret))
     }
     
     var testUploadArchiveWithCredentials: ((String, String, String, String) -> Void)?
-    @discardableResult func uploadArchive(at archivePath: String, to s3Bucket: String, in region: String, using credentialsPath: String) throws
+    func uploadArchive(at archivePath: String, to s3Bucket: String, in region: String, using credentialsPath: String) throws
     {
         (testUploadArchiveWithCredentials?(archivePath, s3Bucket, region, credentialsPath))
     }

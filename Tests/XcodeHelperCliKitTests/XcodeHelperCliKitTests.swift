@@ -7,11 +7,11 @@
 //
 
 import XCTest
-import XcodeHelperKit
-@testable import XcodeHelperCliKit
-import SynchronousProcess
+import ProcessRunner
 import CliRunnable
 import DockerProcess
+import XcodeHelperKit
+@testable import XcodeHelperCliKit
 
 //MARK: TESTS
 
@@ -30,7 +30,7 @@ class XcodeHelperCliKitTests: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
         super.tearDown()
         if sourcePath != nil {
-            Process.run("/bin/rm", arguments: ["-Rf", sourcePath!])
+            ProcessRunner.synchronousRun("/bin/rm", arguments: ["-Rf", sourcePath!])
         }
     }
     
@@ -48,8 +48,8 @@ class XcodeHelperCliKitTests: XCTestCase {
                 
             }
         }
-        let cloneResult = Process.run("/usr/bin/env", arguments: ["git", "clone", repoURL, tempDir], printOutput: false)
-        XCTAssert(cloneResult.exitCode == 0, "Failed to clone repo: \(cloneResult.error)")
+        let cloneResult = ProcessRunner.synchronousRun("/usr/bin/env", arguments: ["git", "clone", repoURL, tempDir], printOutput: false)
+        XCTAssert(cloneResult.exitCode == 0, "Failed to clone repo: \(String(describing: cloneResult.error))")
         XCTAssert(FileManager.default.fileExists(atPath: tempDir))
         print("done cloning temp dir: \(tempDir)")
         return tempDir
@@ -328,7 +328,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             return
         }
         //clear all logs
-        Process.run("/bin/bash", arguments: ["-c", "cd \(buildURL.path) && rm *.xcactivitylog"])
+        ProcessRunner.synchronousRun("/bin/bash", arguments: ["-c", "cd \(buildURL.path) && rm *.xcactivitylog"])
         
         let result = xchelper.URLOfLastBuildLog(at: buildURL)//get the most recent build log
         
@@ -855,21 +855,55 @@ class XcodeHelperCliKitTests: XCTestCase {
     }
     
     //MARK: Create XCArchive
-    func testHandleCreateXcarchive_missingArchive(){
+    func testHandleCreateXcarchive_missingPaths(){
         do{
-            let xchelper = XCHelper(xcodeHelpable: XcodeHelpableFixture())
-            let option = xchelper.createXcarchiveOption
+            let expectations: [CliOption: [String]] = [:]
+            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)![0]
             
             _ = try xchelper.handleCreateXcarchive(option: option)
             
             XCTFail("An error should have been thrown")
         }catch XcodeHelperError.createXcarchive(let message){
-            XCTAssertTrue(message.contains("xcarchive"), "An error about a missing xcarchive path should have been thrown.")
+            XCTAssertTrue(message.contains("any paths"), "An error about a missing xcarchive path should have been thrown. \"\(message)\"")
         }catch let e{
             XCTFail("Error: \(e)")
         }
     }
-    func testCreateXcarchive_missingName(){
+    func testHandleCreateXcarchive_missingArchivePath(){
+        do{
+            let expectations = [XCHelper.createXcarchive.command: [String]()]
+            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)![0]
+            
+            _ = try xchelper.handleCreateXcarchive(option: option)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.createXcarchive(let message){
+            XCTAssertTrue(message.contains("archive path"), "An error about a missing xcarchive path should have been thrown. \"\(message)\"")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testHandleCreateXcarchive_missingBinaryPath(){
+        do{
+            let expectations = [XCHelper.createXcarchive.command: ["/tmp/binary"]]
+            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)![0]
+            
+            _ = try xchelper.handleCreateXcarchive(option: option)
+            
+            XCTFail("An error should have been thrown")
+        }catch XcodeHelperError.createXcarchive(let message){
+            XCTAssertTrue(message.contains("binary"), "An error about a missing binary path should have been thrown. \"\(message)\"")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    /*func testCreateXcarchive_missingName(){
         do{
             let expectations = [XCHelper.createXcarchive.command: ["/tmp/file.swift"]]
             let fixture = XcodeHelpableFixture(expectations: expectations)
@@ -883,15 +917,14 @@ class XcodeHelperCliKitTests: XCTestCase {
         }catch let e{
             XCTFail("Error: \(e)")
         }
-    }
+    }*/
     func testCreateXcarchive_missingScheme(){
         do{
-            let expectations = [XCHelper.createXcarchive.command: ["/tmp/file.swift"],
-                                XCHelper.createXcarchive.nameOption: ["name"]]
+            let expectations = [XCHelper.createXcarchive.command: ["/tmp/file.swift", "testarchive.tar.gz"]]//XCHelper.createXcarchive.nameOption: ["name"]
             let fixture = XcodeHelpableFixture(expectations: expectations)
             let xchelper = XCHelper(xcodeHelpable: fixture)
-            let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)!.first?
-                            .preparedWithOptionalArg(fixtureIndex: [XCHelper.createXcarchive.nameOption: expectations[XCHelper.createXcarchive.nameOption]!])
+            let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)!.first
+//                            .preparedWithOptionalArg(fixtureIndex: [XCHelper.createXcarchive.nameOption: expectations[XCHelper.createXcarchive.nameOption]!])
             
             _ = try xchelper.handleCreateXcarchive(option: option!)
 
@@ -904,20 +937,21 @@ class XcodeHelperCliKitTests: XCTestCase {
     func testCreateXcarchive(){
         do{
             var didCallCreateXcarchive = false
-            let expectations = [XCHelper.createXcarchive.command: ["/tmp/file.swift"],
-                                XCHelper.createXcarchive.nameOption: ["name"],
+            let expectations = [XCHelper.createXcarchive.command: ["/tmp/archive.xcarchive", "/tmp/file.swift"],
+//                                XCHelper.createXcarchive.nameOption: ["name"],
                                 XCHelper.createXcarchive.schemeOption: ["scheme"]]
             var fixture = XcodeHelpableFixture(expectations: expectations)
-            fixture.testCreateXcarchive = { (dirPath: String, binaryPath: String, schemeName: String) in
+            fixture.testCreateXcarchive = { (archivePath: String, binaryPath: String, schemeName: String) in
                 didCallCreateXcarchive = true
-                XCTAssertEqual(dirPath, expectations[XCHelper.createXcarchive.command]?.first!)
-                XCTAssertEqual(binaryPath, expectations[XCHelper.createXcarchive.nameOption]?.first!)
+                XCTAssertEqual(archivePath, expectations[XCHelper.createXcarchive.command]?.first!)
+                XCTAssertEqual(binaryPath, expectations[XCHelper.createXcarchive.command]?[1])
+//                XCTAssertEqual(name, expectations[XCHelper.createXcarchive.nameOption]?.first!)
                 XCTAssertEqual(schemeName, expectations[XCHelper.createXcarchive.schemeOption]?.first!)
                 return ""
             }
             let xchelper = XCHelper(xcodeHelpable: fixture)
             let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)!.first?
-                .preparedWithOptionalArg(fixtureIndex: [XCHelper.createXcarchive.nameOption: expectations[XCHelper.createXcarchive.nameOption]!,
+                .preparedWithOptionalArg(fixtureIndex: [/*XCHelper.createXcarchive.nameOption: expectations[XCHelper.createXcarchive.nameOption]!,*/
                                                         XCHelper.createXcarchive.schemeOption: expectations[XCHelper.createXcarchive.schemeOption]!])
             
             _ = try xchelper.handleCreateXcarchive(option: option!)
@@ -935,6 +969,41 @@ class XcodeHelperCliKitTests: XCTestCase {
         for key in xchelper.environmentKeys {
             XCTAssert(!allKeys.contains(key), "\(key) is in set: \(allKeys)")
             allKeys.insert(key)
+        }
+    }
+    
+    func testParseYaml() {
+        do{
+            //expectations
+            let configPath = "/tmp/.xcodehelper"
+            let command = "create-xcarchive"
+            let archivePath = "/tmp/xchelper_test.xcarchive"
+            let name = UUID().uuidString
+            let binaryPath = "/tmp/\(name)"
+            let scheme =  UUID().uuidString
+            //create the yaml file
+            let yamlContents = "\(command):\n  args:\n    - \(archivePath)\n    - \(binaryPath)\"\n  name: \(name)\n  scheme: \(scheme)\n  "
+            try! yamlContents.write(toFile: configPath, atomically: false, encoding: .utf8)
+            //prepare the fixture data
+            var didCallCreateXcarchive = false
+            var fixture = XcodeHelpableFixture()
+            fixture.testCreateXcarchive = { (archivePath: String, binary: String, schemeName: String) in
+                didCallCreateXcarchive = true
+                XCTAssertEqual(archivePath, archivePath)
+                XCTAssertEqual(binary, binaryPath)
+//                XCTAssertNotEqual(named, name)//cli option takes precedence over this one
+                XCTAssertNotEqual(schemeName, scheme)//cli option takes precedence over this one
+                return ""
+            }
+            let arguments = [XCHelper.createXcarchive.command.keys.first!, archivePath, binaryPath,
+                            /*XCHelper.createXcarchive.nameOption.keys.first!, UUID().uuidString,*/
+                                XCHelper.createXcarchive.schemeOption.keys.first!, UUID().uuidString]
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            _ = try xchelper.run(arguments: arguments, environment: [:])//, yamlConfigurationPath: configPath
+
+            XCTAssertTrue(didCallCreateXcarchive)
+        }catch let e{
+            XCTFail("Error: \(e)")
         }
     }
 }

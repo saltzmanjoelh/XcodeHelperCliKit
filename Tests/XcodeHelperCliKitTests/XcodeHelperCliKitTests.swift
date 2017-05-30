@@ -288,6 +288,7 @@ class XcodeHelperCliKitTests: XCTestCase {
         }
     }
     func testLastBuildWasSuccess() {
+        guard ProcessInfo.processInfo.environment["TRAVIS_OS_NAME"] == nil else { return }
         do{
             let xchelper = XCHelper(xcodeHelpable:XcodeHelpableFixture())
             let buildURL = getCurrentBuildURL()
@@ -301,6 +302,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     }
     //XcodeHelperCliKit..lastBuildWasSuccess
     func testLastBuildWasSuccess_missingLogURL(){
+        guard ProcessInfo.processInfo.environment["TRAVIS_OS_NAME"] == nil else { return }
         do{
             let xchelper = XCHelper(xcodeHelpable:XcodeHelpableFixture())
             
@@ -312,6 +314,7 @@ class XcodeHelperCliKitTests: XCTestCase {
         }
     }
     func testXcodeBuildLogDirectory(){
+        guard ProcessInfo.processInfo.environment["TRAVIS_OS_NAME"] == nil else { return }
         let xcodeBuildDir = "/target/Build/Products/"
         let xchelper = XCHelper(xcodeHelpable:XcodeHelpableFixture())
         
@@ -322,6 +325,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     }
     
     func testURLOfLastBuildLog_noFiles(){
+        guard ProcessInfo.processInfo.environment["TRAVIS_OS_NAME"] == nil else { return }
         let xchelper = XCHelper(xcodeHelpable:XcodeHelpableFixture())
         guard let buildURL = getCurrentBuildURL() else {//get the build directory for this
             XCTFail("Failed to find XcodeHelperCli build directory")
@@ -336,6 +340,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     }
     
     func getCurrentBuildURL() -> URL? {
+        guard ProcessInfo.processInfo.environment["TRAVIS_OS_NAME"] == nil else { return nil }
         //maybe look at prefs later
         var derivedDataURL: URL
         if #available(OSX 10.12, *) {

@@ -291,9 +291,12 @@ class XcodeHelperCliKitTests: XCTestCase {
         guard ProcessInfo.processInfo.environment["TRAVIS_OS_NAME"] == nil else { return }
         do{
             let xchelper = XCHelper(xcodeHelpable:XcodeHelpableFixture())
-            let buildURL = getCurrentBuildURL()
+            guard let buildURL = getCurrentBuildURL() else {
+                XCTFail("Failed nil returned from getCurrentBuildURL()")
+                return
+            }
             
-            let result = try xchelper.lastBuildWasSuccess(at: buildURL!)
+            let result = try xchelper.lastBuildWasSuccess(at: buildURL)
             
             XCTAssertTrue(result)
         }catch let e{
@@ -353,12 +356,14 @@ class XcodeHelperCliKitTests: XCTestCase {
             // Fallback on earlier versions
             derivedDataURL = URL(fileURLWithPath: "~/Library/Developer/Xcode/DerivedData")
         }
-        
-        for directory in FileManager.default.subpaths(atPath: derivedDataURL.path)! {
-            if directory.hasPrefix("XcodeHelperCli") {
-                return derivedDataURL.appendingPathComponent(directory, isDirectory: true)
-                        .appendingPathComponent("Logs", isDirectory: true)
-                        .appendingPathComponent("Build", isDirectory: true) 
+        let prefixes = ["XcodeHelperCli", "XcodeHelper"] //tests may be running from XcodeHelper workspace
+        for prefix in prefixes {
+            for directory in FileManager.default.subpaths(atPath: derivedDataURL.path)! {
+                if directory.hasPrefix(prefix) {
+                    return derivedDataURL.appendingPathComponent(directory, isDirectory: true)
+                            .appendingPathComponent("Logs", isDirectory: true)
+                            .appendingPathComponent("Build", isDirectory: true)
+                }
             }
         }
         return nil
@@ -371,12 +376,15 @@ class XcodeHelperCliKitTests: XCTestCase {
             XCTFail("Failed to find XcodeHelperCli build directory")
             return
         }
-        let log = xchelper.URLOfLastBuildLog(at: buildURL)//get the most recent build log
+        guard let log = xchelper.URLOfLastBuildLog(at: buildURL) else { //get the most recent build log
+            XCTFail("Failed to get build log: \(buildURL)")
+            return
+        }
         
         do{
-            let result = try xchelper.decode(xcactivityLog: URL.init(fileURLWithPath: log!.path))
+            let result = try xchelper.decode(xcactivityLog: URL.init(fileURLWithPath: log.path))
             
-            XCTAssertEqual(result, "succeeded") //it should contain "succeeded" in order for this test to run
+            XCTAssertTrue(result!.contains("succeeded")) //it should contain "succeeded" in order for this test to run
         }catch let e{
             XCTFail("Error: \(e)")
         }

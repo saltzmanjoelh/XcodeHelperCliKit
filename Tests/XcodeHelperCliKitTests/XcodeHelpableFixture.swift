@@ -25,75 +25,75 @@ struct XcodeHelpableFixture: XcodeHelpable {
     
     var testUpdateMacOsPackages: ((String) -> ProcessResult)?
     @discardableResult
-    public func updateMacOsPackages(at sourcePath: String) throws -> ProcessResult
+    public func updateMacOsPackages(at sourcePath: String, shouldLog: Bool) throws -> ProcessResult
     {
         return (testUpdateMacOsPackages?(sourcePath))!
     }
     
     var testUpdateDockerPackages: ((String, String) -> ProcessResult)?
     @discardableResult
-    public func updateDockerPackages(at sourcePath: String, inImage dockerImageName: String, withVolume persistentVolumeName: String) throws -> ProcessResult {
+    public func updateDockerPackages(at sourcePath: String, inImage dockerImageName: String, withVolume persistentVolumeName: String, shouldLog: Bool) throws -> ProcessResult {
         return (testUpdateDockerPackages?(sourcePath, dockerImageName))!
     }
     
     var testDockerBuild: ((String, [DockerRunOption]?, BuildConfiguration, String, String?) -> ProcessResult)?
-    @discardableResult  func dockerBuild(_ sourcePath: String, with runOptions: [DockerRunOption]?, using configuration: BuildConfiguration, in dockerImageName: String, persistentVolumeName persistentBuildDirectory: String?) throws -> ProcessResult {
+    @discardableResult  func dockerBuild(_ sourcePath: String, with runOptions: [DockerRunOption]?, using configuration: BuildConfiguration, in dockerImageName: String, persistentVolumeName persistentBuildDirectory: String?, shouldLog: Bool) throws -> ProcessResult {
         return (testDockerBuild?(sourcePath, runOptions, configuration, dockerImageName, persistentBuildDirectory))!
     }
     
     var testClean: ((String) -> ProcessResult)?
-    @discardableResult func clean(sourcePath: String) throws -> ProcessResult
+    @discardableResult func clean(sourcePath: String, shouldLog: Bool) throws -> ProcessResult
     {
         return (testClean?(sourcePath))!
     }
     
     var testSymlinkDependencies: ((String) -> Void)?
-    func symlinkDependencies(at sourcePath: String) throws
+    func symlinkDependencies(at sourcePath: String, shouldLog: Bool) throws
     {
         testSymlinkDependencies?(sourcePath)
     }
     
     var testGenerateXcodeProject: ((String) -> ProcessResult )?
-    @discardableResult func generateXcodeProject(at sourcePath: String) throws -> ProcessResult {
+    @discardableResult func generateXcodeProject(at sourcePath: String, shouldLog: Bool) throws -> ProcessResult {
         return (testGenerateXcodeProject?(sourcePath))!
     }
     
     var testCreateArchive: ((String, [String], Bool) -> ProcessResult)?
-    @discardableResult func createArchive(at archivePath: String, with filePaths: [String], flatList: Bool) throws -> ProcessResult
+    @discardableResult func createArchive(at archivePath: String, with filePaths: [String], flatList: Bool, shouldLog: Bool) throws -> ProcessResult
     {
         return (testCreateArchive?(archivePath, filePaths, flatList))!
     }
     
     var testUploadArchive: ((String, String, String, String, String) -> Void)?
-    func uploadArchive(at archivePath: String, to s3Bucket: String, in region: String, key: String, secret: String) throws
+    func uploadArchive(at archivePath: String, to s3Bucket: String, in region: String, key: String, secret: String, shouldLog: Bool) throws
     {
         (testUploadArchive?(archivePath, s3Bucket, region, key, secret))
     }
     
     var testUploadArchiveWithCredentials: ((String, String, String, String) -> Void)?
-    func uploadArchive(at archivePath: String, to s3Bucket: String, in region: String, using credentialsPath: String) throws
+    func uploadArchive(at archivePath: String, to s3Bucket: String, in region: String, using credentialsPath: String, shouldLog: Bool) throws
     {
         (testUploadArchiveWithCredentials?(archivePath, s3Bucket, region, credentialsPath))
     }
     
     var testIncrementGitTag: ((GitTagComponent, String) -> String)?
-    @discardableResult func incrementGitTag(component: GitTagComponent, at sourcePath: String) throws -> String
+    @discardableResult func incrementGitTag(component: GitTagComponent, at sourcePath: String, shouldLog: Bool) throws -> String
     {
         return (testIncrementGitTag?(component, sourcePath))!
     }
     var testGitTag: ((String, String) throws -> Void)?
-    func gitTag(_ tag: String, repo sourcePath: String) throws
+    func gitTag(_ tag: String, repo sourcePath: String, shouldLog: Bool) throws
     {
         (try testGitTag?(tag, sourcePath))
     }
     var testPushGitTag: ((String, String) -> Void)?
-    func pushGitTag(tag: String, at sourcePath: String) throws
+    func pushGitTag(tag: String, at sourcePath: String, shouldLog: Bool) throws
     {
         (testPushGitTag?(tag, sourcePath))
     }
     
     var testCreateXcarchive: ((String, String, String) throws -> String)?
-    @discardableResult func createXcarchive(in dirPath: String, with binaryPath: String, from schemeName: String) throws -> String
+    @discardableResult func createXcarchive(in dirPath: String, with binaryPath: String, from schemeName: String, shouldLog: Bool) throws -> String
     {
         return (try testCreateXcarchive?(dirPath, binaryPath, schemeName))!
     }

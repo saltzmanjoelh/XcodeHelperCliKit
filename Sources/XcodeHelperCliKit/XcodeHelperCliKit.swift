@@ -100,13 +100,13 @@ public struct XCHelper : CliRunnable {
     public func handleUpdatePackages(option:CliOption) throws {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: updateMacOsPackages.changeDirectory.keys.first)
-        try xcodeHelpable.updateMacOsPackages(at: sourcePath)
+        try xcodeHelpable.updateMacOsPackages(at: sourcePath, shouldLog: true)
         
         if argumentIndex[updateMacOsPackages.generateXcodeProject.keys.first!] != nil {
-            try xcodeHelpable.generateXcodeProject(at: sourcePath)
+            try xcodeHelpable.generateXcodeProject(at: sourcePath, shouldLog: true)
         }
         if argumentIndex[updateMacOsPackages.symlink.keys.first!] != nil {
-            try xcodeHelpable.symlinkDependencies(at: sourcePath)
+            try xcodeHelpable.symlinkDependencies(at: sourcePath, shouldLog: true)
         }
     }
     
@@ -150,7 +150,7 @@ public struct XCHelper : CliRunnable {
         guard let volumeName = argumentIndex[updateDockerPackages.volumeName.keys.first!]?.first else {
             throw XcodeHelperError.updatePackages(message: "You must provide an persistent volume name when updating Docker packages")
         }
-        try xcodeHelpable.updateDockerPackages(at: sourcePath, inImage: imageName, withVolume: volumeName)
+        try xcodeHelpable.updateDockerPackages(at: sourcePath, inImage: imageName, withVolume: volumeName, shouldLog: true)
     }
     
     // MARK: DockerBuild
@@ -214,7 +214,7 @@ public struct XCHelper : CliRunnable {
             }
         }
         
-        try xcodeHelpable.dockerBuild(sourcePath, with: [.removeWhenDone], using: buildConfiguration, in: imageName, persistentVolumeName: persistentVolume)
+        try xcodeHelpable.dockerBuild(sourcePath, with: [.removeWhenDone], using: buildConfiguration, in: imageName, persistentVolumeName: persistentVolume, shouldLog: true)
     }
     //we have the func here instead of XcodeHelperKit because it requires use of ProcessInfo which is more likely to be available here
     //check BUILD_DIR/../../Logs/Build `ls -t` first item, it's gziped archive, last word in file is success or failed
@@ -223,8 +223,8 @@ public struct XCHelper : CliRunnable {
         guard let logURL = URLOfLastBuildLog(at: xcodeBuildLogDirectory) else {
             return false //no build log
         }
-        let endOfFile = try decode(xcactivityLog: logURL)
-        return endOfFile == "succeeded"
+        guard let endOfFile = try decode(xcactivityLog: logURL) else { return false }
+        return endOfFile.contains("succeeded")
     }
     func xcodeBuildLogDirectory(from xcodeBuildDir: String) -> URL? {
         let buildDirURL = URL(fileURLWithPath: xcodeBuildDir)// /target/Build/Products/../../Logs/Build
@@ -248,9 +248,9 @@ public struct XCHelper : CliRunnable {
         guard let output = result.output, output.characters.count > 0 else {
             throw XcodeHelperCliError.xcactivityLogDecode(message: result.error!)
         }
-        let start = output.index(output.endIndex, offsetBy: -9) // succeeded
+        let start = output.index(output.endIndex, offsetBy: -10) // succeeded
         let range = start ..< output.endIndex
-        return output[range]
+        return String(output[range])
         
     }
     
@@ -278,7 +278,7 @@ public struct XCHelper : CliRunnable {
     public func handleClean(option:CliOption) throws {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: clean.changeDirectory.keys.first)
-        try xcodeHelpable.clean(sourcePath: sourcePath)
+        try xcodeHelpable.clean(sourcePath: sourcePath, shouldLog: true)
     }
     
     
@@ -304,7 +304,7 @@ public struct XCHelper : CliRunnable {
     public func handleSymlinkDependencies(option:CliOption) throws {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: symlinkDependencies.changeDirectory.keys.first)
-        try xcodeHelpable.symlinkDependencies(at: sourcePath)
+        try xcodeHelpable.symlinkDependencies(at: sourcePath, shouldLog: true)
     }
     
     
@@ -344,7 +344,7 @@ public struct XCHelper : CliRunnable {
         }
         
         let filePaths = Array(paths[1..<paths.count])
-        try xcodeHelpable.createArchive(at: archivePath, with: filePaths, flatList: flatList)
+        try xcodeHelpable.createArchive(at: archivePath, with: filePaths, flatList: flatList, shouldLog: true)
     }
     
     
@@ -402,10 +402,10 @@ public struct XCHelper : CliRunnable {
             guard let secret = argumentIndex[uploadArchive.secret.keys.first!]?.first else {
                 throw XcodeHelperError.uploadArchive(message: "You didn't provide the secret for the key.")
             }
-            try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, key: key, secret: secret)
+            try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, key: key, secret: secret, shouldLog: true)
             
         } else if let file = argumentIndex[uploadArchive.credentialsFile.keys.first!]?.first {
-                try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, using: file)
+                try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, using: file, shouldLog: true)
             
         } else {
             throw XcodeHelperError.uploadArchive(message: "You must provide either a credentials file or a key and secret")
@@ -456,7 +456,7 @@ public struct XCHelper : CliRunnable {
 
             //update from user input
             if let version = argumentIndex[gitTag.versionOption.keys.first!]?.first {
-                try xcodeHelpable.gitTag(version, repo: sourcePath)
+                try xcodeHelpable.gitTag(version, repo: sourcePath, shouldLog: true)
                 versionString = version
                 
             }else{
@@ -466,25 +466,25 @@ public struct XCHelper : CliRunnable {
                 guard let component = GitTagComponent(stringValue: componentString) else {
                     throw XcodeHelperError.gitTagParse(message: "Unknown value \(componentString)")
                 }
-                versionString = try xcodeHelpable.incrementGitTag(component: component, at: sourcePath)
+                versionString = try xcodeHelpable.incrementGitTag(component: component, at: sourcePath, shouldLog: true)
             }
 
             if let tag = versionString {
                 outputString = tag
                 if argumentIndex[gitTag.pushOption.keys.first!] != nil {
-                    try xcodeHelpable.pushGitTag(tag: tag, at: sourcePath)
+                    try xcodeHelpable.pushGitTag(tag: tag, at: sourcePath, shouldLog: true)
                 }
             }
 
         } catch XcodeHelperError.gitTag(_) {
             //no current tag, just start it at 0.0.1
             outputString = "0.0.1"
-            try xcodeHelpable.gitTag(outputString!, repo: sourcePath)
+            try xcodeHelpable.gitTag(outputString!, repo: sourcePath, shouldLog: true)
         }
         
-        if let str = outputString {
-            print(str)
-        }
+        //if let str = outputString {
+        //    print(str)
+        //}
     }
     
     
@@ -532,8 +532,8 @@ public struct XCHelper : CliRunnable {
             throw XcodeHelperError.createXcarchive(message: "You didn't provide the scheme to include in the plist.")
         }
         paths.removeFirst()
-        let outputString = try xcodeHelpable.createXcarchive(in: archivePath, with: paths.first!, from: scheme)
-        print(outputString)
+        _ = try xcodeHelpable.createXcarchive(in: archivePath, with: paths.first!, from: scheme, shouldLog: true)
+        //print(outputString)
     }
     
 }

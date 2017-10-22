@@ -68,7 +68,7 @@ class XcodeHelperCliKitTests: XCTestCase {
         let xchelper = XCHelper(xcodeHelpable: fixture)
         
         XCTAssertEqual(xchelper.cliOptionGroups.count, 1)
-        XCTAssertEqual(xchelper.cliOptionGroups.first?.options.count, 9)
+        XCTAssertEqual(xchelper.cliOptionGroups.first?.options.count, 8)
     }
     
     func testParseSourceCodePath_custom(){
@@ -90,8 +90,8 @@ class XcodeHelperCliKitTests: XCTestCase {
             let expectations = [XCHelper.updateDockerPackages.changeDirectory: [path],
                                 XCHelper.updateDockerPackages.imageName: ["image"],
                                 XCHelper.updateDockerPackages.volumeName: ["platform"]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
-            fixture.testUpdateDockerPackages = { (sourcePath:String, dockerImageName: String) -> ProcessResult in
+            var fixture = XcodeHelpableFixture()
+            fixture.testUpdateDockerPackages = { (sourcePath:String, dockerImageName: String, volumeName: String, shouldLog: Bool) -> ProcessResult in
                 didCallUpdatePackages = true
                 XCTAssertEqual(sourcePath, expectations[XCHelper.updateDockerPackages.changeDirectory]?.first)
                 return emptyProcessResult
@@ -107,17 +107,24 @@ class XcodeHelperCliKitTests: XCTestCase {
         }
     }
     func testHandleUpdateDockerPackages_missingImageName() {
+        var didCallUpdatePackages = false
         do{
             let path = "/tmp/\(UUID().uuidString)"
             let expectations = [XCHelper.updateDockerPackages.changeDirectory: [path]]
-            let xchelper = XCHelper(xcodeHelpable: XcodeHelpableFixture(expectations: expectations))
+            var fixture = XcodeHelpableFixture()
+            fixture.testUpdateDockerPackages = { (sourcePath:String, dockerImageName: String, volumeName: String, shouldLog: Bool) -> ProcessResult in
+                didCallUpdatePackages = true
+                XCTAssertEqual(dockerImageName, "swift")//it should default to swift if it's missing
+                return emptyProcessResult
+            }
+            let xchelper = XCHelper(xcodeHelpable: fixture)
             let option = xchelper.updateDockerPackagesOption.preparedWithOptionalArg(fixtureIndex: expectations)
             
             try xchelper.handleUpdateDockerPackages(option: option)
             
-            XCTFail("An error should have been thrown about missing the image name.")
         }catch XcodeHelperError.updatePackages(let message){
             XCTAssertTrue(message.contains("image name"), "Image name error should have been thrown.")
+            XCTAssertTrue(didCallUpdatePackages)
         }catch let e{
             XCTFail("Error: \(e)")
         }
@@ -127,7 +134,7 @@ class XcodeHelperCliKitTests: XCTestCase {
 //            let path = "/tmp/\(UUID().uuidString)"
 //            let expectations = [XCHelper.updateDockerPackages.changeDirectory: [path],
 //                                XCHelper.updateDockerPackages.imageName: ["image"]]
-//            let xchelper = XCHelper(xcodeHelpable: XcodeHelpableFixture(expectations: expectations))
+//            let xchelper = XCHelper(xcodeHelpable: XcodeHelpableFixture())
 //            let option = xchelper.updateDockerPackagesOption.preparedWithOptionalArg(fixtureIndex: expectations)
 //            
 //            try xchelper.handleUpdateDockerPackages(option: option)
@@ -144,7 +151,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             let path = "/tmp/\(UUID().uuidString)"
             var didCallUpdatePackages = false
             let expectations = [XCHelper.updateMacOsPackages.changeDirectory: [path]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testUpdateMacOsPackages = { (sourcePath:String) -> ProcessResult in
                 didCallUpdatePackages = true
                 XCTAssertEqual(sourcePath, expectations[XCHelper.updateMacOsPackages.changeDirectory]?.first)
@@ -165,7 +172,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             let path = "/tmp/\(UUID().uuidString)"
             let expectations = [XCHelper.updateMacOsPackages.changeDirectory: [path],
                                 XCHelper.updateMacOsPackages.generateXcodeProject: [path]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testUpdateMacOsPackages = { (sourcePath:String) -> ProcessResult in
                 return emptyProcessResult
             }
@@ -190,7 +197,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             let path = "/tmp/\(UUID().uuidString)"
             let expectations = [XCHelper.updateMacOsPackages.changeDirectory: [path],
                                 XCHelper.updateMacOsPackages.symlink: [path]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testUpdateMacOsPackages = { (sourcePath:String) -> ProcessResult in
                 return emptyProcessResult
             }
@@ -214,7 +221,7 @@ class XcodeHelperCliKitTests: XCTestCase {
         do{
             let expectations = [XCHelper.dockerBuild.buildConfiguration: ["\(buildConfiguration)"],
                                 XCHelper.dockerBuild.imageName: ["image"]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             //dockerBuild() throws -> ProcessResult
             fixture.testDockerBuild = { (sourcePath: String, with: [DockerRunOption]?, using: BuildConfiguration, in: String, persistentBuildDirectory: String?) -> ProcessResult in
                 XCTAssertEqual(using, buildConfiguration)
@@ -273,7 +280,7 @@ class XcodeHelperCliKitTests: XCTestCase {
                                 XCHelper.dockerBuild.imageName: ["image"],
                                 XCHelper.dockerBuild.volumeName: ["platform"],
                                 XCHelper.dockerBuild.buildOnSuccess: ["/tmp"]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testDockerBuild = { (_: String, with: [DockerRunOption]?, using: BuildConfiguration, in: String, persistentVolumeName: String?) -> ProcessResult in
                 XCTFail("dockerBuild should NOT have been called.")
                 return emptyProcessResult
@@ -411,7 +418,7 @@ class XcodeHelperCliKitTests: XCTestCase {
                                 XCHelper.dockerBuild.changeDirectory: ["/tmp"],
                                 XCHelper.dockerBuild.imageName: ["image"],
                                 XCHelper.dockerBuild.buildOnSuccess: [getCurrentBuildURL()!.path]]
-            var fixture = XcodeHelpableFixture(expectations:expectations)
+            var fixture = XcodeHelpableFixture()
             var didCallDockerBuild = false
             fixture.testDockerBuild = { (sourcePath: String, withDockerRunOptions: [DockerRunOption]?, usingBuildConfiguration: BuildConfiguration, inDockerImage: String, persistentBuildDirectory: String?) -> ProcessResult in
                 didCallDockerBuild = true
@@ -430,36 +437,14 @@ class XcodeHelperCliKitTests: XCTestCase {
             XCTFail("Error: \(e)")
         }
     }
-    
-    
-    //MARK: Clean
-    func testHandleClean() {
-        do{
-            var didCallClean = false
-            let expectations = [XCHelper.clean.changeDirectory: ["/tmp"]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
-            fixture.testClean = { (sourcePath: String) in
-                didCallClean = true
-                XCTAssertEqual(sourcePath, expectations[XCHelper.clean.changeDirectory]?.first!)
-                return emptyProcessResult
-            }
-            let xchelper = XCHelper(xcodeHelpable:fixture)
-            let option = xchelper.cleanOption.preparedWithOptionalArg(fixtureIndex: expectations)
-            
-            try xchelper.handleClean(option: option)
-            
-            XCTAssertTrue(didCallClean)
-        }catch let e{
-            XCTFail("Error: \(e)")
-        }
-    }
+
     
     //MARK: Symlink Dependencies
     func testSymlinkDependencies() {
         do{
             var didCallSymlinkDependencies = false
             let expectations = [XCHelper.symlinkDependencies.changeDirectory: ["/tmp"]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testSymlinkDependencies = { (sourcePath: String) in
                 didCallSymlinkDependencies = true
                 XCTAssertEqual(sourcePath, expectations[XCHelper.symlinkDependencies.changeDirectory]?.first!)
@@ -493,7 +478,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     func testCreateArchive_missingArchivePath(){
         do{
             let expectations = [XCHelper.createArchive.command:[String]()]
-            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             let option = prepare(options: [xchelper.createArchiveOption], with: expectations)!.first
             
@@ -509,7 +494,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     func testCreateArchive_missingFilePaths(){
         do{
             let expectations = [XCHelper.createArchive.command:["/tmp/archive.tar"]]
-            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             let option = prepare(options: [xchelper.createArchiveOption], with: expectations)!.first
             
@@ -527,7 +512,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             var didCallCreateArchive = false
             let expectations = [XCHelper.createArchive.command: ["/tmp/archive.tar", "/tmp/file.swift"],
                                 XCHelper.createArchive.flatList: ["true"]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testCreateArchive = { (archivePath: String, filePaths: [String], flatList: Bool) in
                 didCallCreateArchive = true
                 XCTAssertEqual(archivePath, expectations[XCHelper.createArchive.command]?[0])
@@ -564,7 +549,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     func testUploadArchive_missingBucketName(){
         do{
             let expectations = [XCHelper.uploadArchive.command:["/tmp/archive.tar"]]
-            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             let option = prepare(options: [xchelper.uploadArchiveOption], with: expectations)!.first
             
@@ -581,7 +566,7 @@ class XcodeHelperCliKitTests: XCTestCase {
         do{
             let expectations = [XCHelper.uploadArchive.command: ["/tmp/archive.tar"],
                                 XCHelper.uploadArchive.bucket: ["bucketName"]]
-            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             var option = prepare(options: [xchelper.uploadArchiveOption], with: expectations)!.first
             option = option?.preparedWithRequiredArg(fixtureIndex: expectations)
@@ -600,7 +585,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             let expectations = [XCHelper.uploadArchive.command: ["/tmp/archive.tar"],
                                 XCHelper.uploadArchive.bucket: ["bucketName"],
                                 XCHelper.uploadArchive.region: ["region"]]
-            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             var option = prepare(options: [xchelper.uploadArchiveOption], with: expectations)!.first
             option = option?.preparedWithRequiredArg(fixtureIndex: expectations)
@@ -620,7 +605,7 @@ class XcodeHelperCliKitTests: XCTestCase {
                                 XCHelper.uploadArchive.bucket: ["bucketName"],
                                 XCHelper.uploadArchive.region: ["region"],
                                 XCHelper.uploadArchive.key: ["key"]]
-            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             var option = prepare(options: [xchelper.uploadArchiveOption], with: expectations)!.first
             option = option?.preparedWithRequiredArg(fixtureIndex: expectations)
@@ -671,7 +656,7 @@ class XcodeHelperCliKitTests: XCTestCase {
                                 XCHelper.uploadArchive.bucket: ["bucketName"],
                                 XCHelper.uploadArchive.region: ["region"],
                                 XCHelper.uploadArchive.credentialsFile: ["credentialsFile"]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testUploadArchiveWithCredentials = { (archivePath: String, s3Bucket: String, region: String, credentialsPath: String) in
                 didCallUploadArchive = true
                 XCTAssertEqual(archivePath, expectations[XCHelper.uploadArchive.command]!.first)
@@ -695,7 +680,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     func testHandleGitTag_missingComponent(){
         do{
             let expectations = [XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
-            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
             option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
@@ -714,7 +699,7 @@ class XcodeHelperCliKitTests: XCTestCase {
         do{
             let expectations = [XCHelper.gitTag.incrementOption: [UUID().uuidString],
                                 XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
-            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
             option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
@@ -734,7 +719,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             var didCallGitTag = false
             let expectations = [XCHelper.gitTag.versionOption: ["9.9.9"],
                                 XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testGitTag = { (tag: String, sourcePath: String) in
                 didCallGitTag = true
                 XCTAssertEqual(tag, expectations[XCHelper.gitTag.versionOption]!.first)
@@ -756,7 +741,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             var didCallIncrementGitTag = false
             let expectations = [XCHelper.gitTag.incrementOption: ["patch"],
                                 XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String) in
                 didCallIncrementGitTag = true
                 XCTAssertEqual(component, GitTagComponent(stringValue: expectations[XCHelper.gitTag.incrementOption]!.first!))
@@ -779,7 +764,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             var didCallIncrementGitTag = false
             let expectations = [XCHelper.gitTag.incrementOption: ["minor"],
                                 XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String) in
                 didCallIncrementGitTag = true
                 XCTAssertEqual(component, GitTagComponent(stringValue: expectations[XCHelper.gitTag.incrementOption]!.first!))
@@ -802,7 +787,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             var didCallIncrementGitTag = false
             let expectations = [XCHelper.gitTag.incrementOption: ["major"],
                                 XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String) in
                 didCallIncrementGitTag = true
                 XCTAssertEqual(component, GitTagComponent(stringValue: expectations[XCHelper.gitTag.incrementOption]!.first!))
@@ -827,7 +812,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             let expectations = [XCHelper.gitTag.versionOption: ["9.9.9"],
                                 XCHelper.gitTag.changeDirectory: ["/tmp/path"],
                                 XCHelper.gitTag.pushOption:[]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testPushGitTag = { (tag: String, sourcePath: String) in
                 didCallGitPush = true
                 XCTAssertEqual(tag, expectations[XCHelper.gitTag.versionOption]!.first)
@@ -848,7 +833,7 @@ class XcodeHelperCliKitTests: XCTestCase {
         do{
             var didCallGitTag = false
             let expectations = [XCHelper.gitTag.versionOption: ["9.9.9"]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testGitTag = { (tag: String, sourcePath: String) in
                 if tag == expectations[XCHelper.gitTag.versionOption]?.first!{
                     throw XcodeHelperError.gitTag(message: "")
@@ -872,7 +857,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     func testHandleCreateXcarchive_missingPaths(){
         do{
             let expectations: [CliOption: [String]] = [:]
-            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)![0]
             
@@ -888,7 +873,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     func testHandleCreateXcarchive_missingArchivePath(){
         do{
             let expectations = [XCHelper.createXcarchive.command: [String]()]
-            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)![0]
             
@@ -904,7 +889,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     func testHandleCreateXcarchive_missingBinaryPath(){
         do{
             let expectations = [XCHelper.createXcarchive.command: ["/tmp/binary"]]
-            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)![0]
             
@@ -920,7 +905,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     /*func testCreateXcarchive_missingName(){
         do{
             let expectations = [XCHelper.createXcarchive.command: ["/tmp/file.swift"]]
-            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)!.first
             
@@ -935,7 +920,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     func testCreateXcarchive_missingScheme(){
         do{
             let expectations = [XCHelper.createXcarchive.command: ["/tmp/file.swift", "testarchive.tar.gz"]]//XCHelper.createXcarchive.nameOption: ["name"]
-            let fixture = XcodeHelpableFixture(expectations: expectations)
+            let fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)!.first
 //                            .preparedWithOptionalArg(fixtureIndex: [XCHelper.createXcarchive.nameOption: expectations[XCHelper.createXcarchive.nameOption]!])
@@ -954,7 +939,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             let expectations = [XCHelper.createXcarchive.command: ["/tmp/archive.xcarchive", "/tmp/file.swift"],
 //                                XCHelper.createXcarchive.nameOption: ["name"],
                                 XCHelper.createXcarchive.schemeOption: ["scheme"]]
-            var fixture = XcodeHelpableFixture(expectations: expectations)
+            var fixture = XcodeHelpableFixture()
             fixture.testCreateXcarchive = { (archivePath: String, binaryPath: String, schemeName: String) in
                 didCallCreateXcarchive = true
                 XCTAssertEqual(archivePath, expectations[XCHelper.createXcarchive.command]?.first!)

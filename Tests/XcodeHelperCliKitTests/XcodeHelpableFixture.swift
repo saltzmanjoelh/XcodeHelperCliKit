@@ -17,11 +17,11 @@ let emptyProcessResult = ProcessResult(output:nil, error:nil, exitCode:0)
 struct XcodeHelpableFixture: XcodeHelpable {
 
     
-    var expectations: [CliOption: [String]]?
+//    var expectations: [CliOption: [String]]?
     init(){}
-    init(expectations:[CliOption: [String]]){
-        self.expectations = expectations
-    }
+//    init(expectations:[CliOption: [String]]){
+//        self.expectations = expectations
+//    }
     
     var testUpdateMacOsPackages: ((String) -> ProcessResult)?
     @discardableResult
@@ -30,10 +30,10 @@ struct XcodeHelpableFixture: XcodeHelpable {
         return (testUpdateMacOsPackages?(sourcePath))!
     }
     
-    var testUpdateDockerPackages: ((String, String) -> ProcessResult)?
+    var testUpdateDockerPackages: ((String, String, String, Bool) -> ProcessResult)?
     @discardableResult
     public func updateDockerPackages(at sourcePath: String, inImage dockerImageName: String, withVolume persistentVolumeName: String, shouldLog: Bool) throws -> ProcessResult {
-        return (testUpdateDockerPackages?(sourcePath, dockerImageName))!
+        return (testUpdateDockerPackages?(sourcePath, dockerImageName, persistentVolumeName, shouldLog))!
     }
     
     var testDockerBuild: ((String, [DockerRunOption]?, BuildConfiguration, String, String?) -> ProcessResult)?

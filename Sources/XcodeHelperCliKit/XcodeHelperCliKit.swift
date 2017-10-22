@@ -7,35 +7,37 @@
 //
 
 import Foundation
-import ProcessRunner
 import XcodeHelperKit
 import CliRunnable
 import DockerProcess
+import ProcessRunner
 
-public enum Command: String {
-
-    case updateMacOsPackages = "Update Packages - macOS"
-    case updateDockerPackages = "Update Packages - Docker"
-    case dockerBuild = "Build in Docker"
-    case symlinkDependencies = "Symlink Dependencies"
-    case createArchive = "Create Archive"
-    case createXcarchive = "Create XCArchive"
-    case uploadArchive = "Upload Archive"
-    case gitTag = "Git Tag"
-
-    static var allValues: [Command] {
-        get {
-            return [.updateMacOsPackages,
-            .updateDockerPackages,
-            .dockerBuild,
-            .symlinkDependencies,
-            .createArchive,
-            .createXcarchive,
-            .uploadArchive,
-            .gitTag]
-        }
-    }
-}
+//Redundant
+//public enum Command: String {
+//
+//    case updateMacOsPackages = "Update Packages - macOS"
+//    case updateDockerPackages = "Update Packages - Docker"
+//    case dockerBuild = "Build in Docker"
+//    case symlinkDependencies = "Symlink Dependencies"
+//    case createArchive = "Create Archive"
+//    case createXcarchive = "Create XCArchive"
+//    case uploadArchive = "Upload Archive"
+//    case gitTag = "Git Tag"
+//
+//
+//    static var allValues: [Command] {
+//        get {
+//            return [.updateMacOsPackages,
+//            .updateDockerPackages,
+//            .dockerBuild,
+//            .symlinkDependencies,
+//            .createArchive,
+//            .createXcarchive,
+//            .uploadArchive,
+//            .gitTag]
+//        }
+//    }
+//}
 
 public enum XcodeHelperCliError : Error, CustomStringConvertible {
     case xcactivityLogDecode(message:String)
@@ -95,7 +97,7 @@ public struct XCHelper : CliRunnable {
     
     // MARK: UpdatePackages
     struct updateMacOsPackages {
-        static let command          = CliOption(keys: [Command.updateMacOsPackages.rawValue, "UPDATE_MACOS_PACKAGES"],
+        static let command          = CliOption(keys: [Command.updateMacOSPackages.rawValue, "UPDATE_MACOS_PACKAGES"],
                                                 description: "Update the package dependencies via 'swift package update'. Optionally, symlink your dependencies and regenerate your xcode project to prevent future updates from requiring a new xcode project to be built.",
                                                 usage: "xchelper update-packages [OPTIONS]",
                                                 requiresValue: false,
@@ -137,7 +139,7 @@ public struct XCHelper : CliRunnable {
     
     struct updateDockerPackages {
         static let command          = CliOption(keys: [Command.updateDockerPackages.rawValue, "UPDATE_DOCKER_PACKAGES"],
-                                                description: "Update the packages for your Docker contain in the persistent volume directory",
+                                                description: "Update the packages for your Docker container in the persistent volume directory",
                                                 usage: "xchelper update-docker-packages [OPTIONS]",
                                                 requiresValue: false,
                                                 defaultValue:nil)
@@ -178,7 +180,7 @@ public struct XCHelper : CliRunnable {
     // MARK: DockerBuild
     struct dockerBuild {
         static let command              = CliOption(keys: [Command.dockerBuild.rawValue, "DOCKER_BUILD"],
-                                                    description: "Build a Swift package in Linux and have the build errors appear in Xcode.",
+                                                    description: "Build a Swift package on another platform like Linux and have the build errors appear in Xcode.",
                                                     usage: "xchelper build [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue: nil)
@@ -331,7 +333,7 @@ public struct XCHelper : CliRunnable {
     // MARK: SymlinkDependencies
     struct symlinkDependencies {
         static let command              = CliOption(keys: [Command.symlinkDependencies.rawValue, "SYMLINK_DEPENDENCIES"],
-                                                    description: "Create symbolic links for the dependency 'Packages' after `swift package update` so you don't have to generate a new xcode project.",
+                                                    description: "Create symbolic links for the dependency packages after `swift package update` so you don't have to generate a new xcode project.",
                                                     usage: "xchelper symlink-dependencies [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue:nil)
@@ -504,12 +506,17 @@ public struct XCHelper : CliRunnable {
             if let version = argumentIndex[gitTag.versionOption.keys.first!]?.first {
                 try xcodeHelpable.gitTag(version, repo: sourcePath, shouldLog: true)
                 versionString = version
+             
+            }else if argumentIndex[gitTag.pushOption.keys.first!] != nil {
+                let tag = try xcodeHelpable.getGitTag(at: sourcePath, shouldLog: false)
+                try xcodeHelpable.pushGitTag(tag: tag, at: sourcePath, shouldLog: true)
                 
             }else{
-                guard let componentString = argumentIndex[gitTag.incrementOption.keys.first!]?.first else {
+                guard let componentString = argumentIndex[gitTag.incrementOption.keys.first!] else {
                     throw XcodeHelperError.gitTagParse(message: "You must provide either \(gitTag.versionOption.keys) OR \(gitTag.incrementOption.keys)")
                 }
-                guard let component = GitTagComponent(stringValue: componentString) else {
+                let stringValue: String = componentString.first ?? GitTagComponent.patch.description
+                guard let component = GitTagComponent(stringValue: stringValue) else {
                     throw XcodeHelperError.gitTagParse(message: "Unknown value \(componentString)")
                 }
                 versionString = try xcodeHelpable.incrementGitTag(component: component, at: sourcePath, shouldLog: true)

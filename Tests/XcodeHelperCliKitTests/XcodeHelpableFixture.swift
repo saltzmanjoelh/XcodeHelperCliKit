@@ -15,7 +15,6 @@ import XcodeHelperKit
 
 let emptyProcessResult = ProcessResult(output:nil, error:nil, exitCode:0)
 struct XcodeHelpableFixture: XcodeHelpable {
-
     
 //    var expectations: [CliOption: [String]]?
     init(){}
@@ -74,6 +73,11 @@ struct XcodeHelpableFixture: XcodeHelpable {
     func uploadArchive(at archivePath: String, to s3Bucket: String, in region: String, using credentialsPath: String, shouldLog: Bool) throws
     {
         (testUploadArchiveWithCredentials?(archivePath, s3Bucket, region, credentialsPath))
+    }
+    
+    var testGetGitTag: ((String) throws -> String)?
+    func getGitTag(at sourcePath: String, shouldLog: Bool) throws -> String {
+        return (try testGetGitTag?(sourcePath))!
     }
     
     var testIncrementGitTag: ((GitTagComponent, String) -> String)?

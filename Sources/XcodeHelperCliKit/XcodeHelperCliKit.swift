@@ -507,9 +507,9 @@ public struct XCHelper : CliRunnable {
                 try xcodeHelpable.gitTag(version, repo: sourcePath, shouldLog: true)
                 versionString = version
              
-            }else if argumentIndex[gitTag.pushOption.keys.first!] != nil {
-                let tag = try xcodeHelpable.getGitTag(at: sourcePath, shouldLog: false)
-                try xcodeHelpable.pushGitTag(tag: tag, at: sourcePath, shouldLog: true)
+            }else if let componentString = argumentIndex[gitTag.incrementOption.keys.first!]?.first,
+                    let component = GitTagComponent.init(stringValue: componentString) {
+                try xcodeHelpable.incrementGitTag(component: component, at: sourcePath, shouldLog: true)
                 
             }else{
                 guard let componentString = argumentIndex[gitTag.incrementOption.keys.first!] else {

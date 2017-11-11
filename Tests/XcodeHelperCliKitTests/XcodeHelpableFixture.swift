@@ -75,15 +75,15 @@ struct XcodeHelpableFixture: XcodeHelpable {
         (testUploadArchiveWithCredentials?(archivePath, s3Bucket, region, credentialsPath))
     }
     
-    var testGetGitTag: ((String) throws -> String)?
+    var testGetGitTag: ((String, Bool) throws -> String)?
     func getGitTag(at sourcePath: String, shouldLog: Bool) throws -> String {
-        return (try testGetGitTag?(sourcePath))!
+        return (try testGetGitTag?(sourcePath, shouldLog))!
     }
     
-    var testIncrementGitTag: ((GitTagComponent, String) -> String)?
+    var testIncrementGitTag: ((GitTagComponent, String, Bool) -> String)?
     @discardableResult func incrementGitTag(component: GitTagComponent, at sourcePath: String, shouldLog: Bool) throws -> String
     {
-        return (testIncrementGitTag?(component, sourcePath))!
+        return (testIncrementGitTag?(component, sourcePath, shouldLog))!
     }
     var testGitTag: ((String, String) throws -> Void)?
     func gitTag(_ tag: String, repo sourcePath: String, shouldLog: Bool) throws

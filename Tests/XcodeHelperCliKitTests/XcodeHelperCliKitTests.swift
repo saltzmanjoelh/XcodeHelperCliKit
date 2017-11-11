@@ -680,10 +680,13 @@ class XcodeHelperCliKitTests: XCTestCase {
     func testHandleGitTag_missingComponent(){
         do{
             let expectations = [XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
-            let fixture = XcodeHelpableFixture()
+            var fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
             option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
+            fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String, shouldLog: Bool) -> String in
+                return ""
+            }
             
             try xchelper.handleGitTag(option: option!)
             
@@ -699,10 +702,13 @@ class XcodeHelperCliKitTests: XCTestCase {
         do{
             let expectations = [XCHelper.gitTag.incrementOption: [UUID().uuidString],
                                 XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
-            let fixture = XcodeHelpableFixture()
+            var fixture = XcodeHelpableFixture()
             let xchelper = XCHelper(xcodeHelpable: fixture)
             var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
             option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
+            fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String, shouldLog: Bool) -> String in
+                return ""
+            }
             
             try xchelper.handleGitTag(option: option!)
             
@@ -736,13 +742,36 @@ class XcodeHelperCliKitTests: XCTestCase {
             XCTFail("Error: \(e)")
         }
     }
+    func testHandleGitTag_increment(){
+        do{
+            var didCallIncrementGitTag = false
+            let expectations = [XCHelper.gitTag.incrementOption: [],
+                                XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
+            var fixture = XcodeHelpableFixture()
+            fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String, shoulLog: Bool) in
+                didCallIncrementGitTag = true
+                XCTAssertEqual(component, GitTagComponent.patch)
+                XCTAssertEqual(sourcePath, expectations[XCHelper.gitTag.changeDirectory]!.first)
+                return "1.0.1"
+            }
+            let xchelper = XCHelper(xcodeHelpable: fixture)
+            var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
+            option = option?.preparedWithRequiredArg(fixtureIndex: expectations).preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleGitTag(option: option!)
+            
+            XCTAssertTrue(didCallIncrementGitTag)
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
     func testHandleGitTag_incrementPatch(){
         do{
             var didCallIncrementGitTag = false
             let expectations = [XCHelper.gitTag.incrementOption: ["patch"],
                                 XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
             var fixture = XcodeHelpableFixture()
-            fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String) in
+            fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String, shouldLog: Bool) in
                 didCallIncrementGitTag = true
                 XCTAssertEqual(component, GitTagComponent(stringValue: expectations[XCHelper.gitTag.incrementOption]!.first!))
                 XCTAssertEqual(sourcePath, expectations[XCHelper.gitTag.changeDirectory]!.first)
@@ -765,7 +794,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             let expectations = [XCHelper.gitTag.incrementOption: ["minor"],
                                 XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
             var fixture = XcodeHelpableFixture()
-            fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String) in
+            fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String, shouldLog: Bool) in
                 didCallIncrementGitTag = true
                 XCTAssertEqual(component, GitTagComponent(stringValue: expectations[XCHelper.gitTag.incrementOption]!.first!))
                 XCTAssertEqual(sourcePath, expectations[XCHelper.gitTag.changeDirectory]!.first)
@@ -788,7 +817,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             let expectations = [XCHelper.gitTag.incrementOption: ["major"],
                                 XCHelper.gitTag.changeDirectory: ["/tmp/path"]]
             var fixture = XcodeHelpableFixture()
-            fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String) in
+            fixture.testIncrementGitTag = { (component: GitTagComponent, sourcePath: String, shouldLog: Bool) in
                 didCallIncrementGitTag = true
                 XCTAssertEqual(component, GitTagComponent(stringValue: expectations[XCHelper.gitTag.incrementOption]!.first!))
                 XCTAssertEqual(sourcePath, expectations[XCHelper.gitTag.changeDirectory]!.first)

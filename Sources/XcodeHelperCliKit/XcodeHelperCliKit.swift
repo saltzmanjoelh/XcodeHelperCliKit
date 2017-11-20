@@ -159,7 +159,7 @@ public struct XCHelper : CliRunnable {
                                                 description:"Create a subdirectory in the .build directory. This separates the macOS build files from docker build files to make builds faster for each platform.",
                                                 usage: "-v [PLATFORM_NAME] ie: -v android",
                                                 requiresValue:true,
-                                                defaultValue: "Docker")
+                                                defaultValue: "docker_volume")
     }
     public var updateDockerPackagesOption: CliOption {
         var updateOption = updateDockerPackages.command
@@ -171,8 +171,8 @@ public struct XCHelper : CliRunnable {
     public func handleUpdateDockerPackages(option:CliOption) throws {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: updateMacOsPackages.changeDirectory.keys.first)
-        let imageName = argumentIndex[updateDockerPackages.imageName.keys.first!]?.first ?? "swift"
-        let volumeName = argumentIndex[updateDockerPackages.volumeName.keys.first!]?.first ?? "swift"
+        let imageName = argumentIndex[updateDockerPackages.imageName.keys.first!]?.first ?? updateDockerPackages.imageName.defaultValue!
+        let volumeName = argumentIndex[updateDockerPackages.volumeName.keys.first!]?.first ?? updateDockerPackages.volumeName.defaultValue!
         
         try xcodeHelpable.updateDockerPackages(at: sourcePath, inImage: imageName, withVolume: volumeName, shouldLog: true)
     }
@@ -213,14 +213,14 @@ public struct XCHelper : CliRunnable {
                                            description:"The name of the container. Defaults to the same as the image name.",
                                            usage: "-n [CONTAINER_NAME] ie: -n android",
                                            requiresValue: true,
-                                           defaultValue: nil)
+                                           defaultValue: "LinuxSwiftContainer")
         
         //TODO: make sure all volumeName options have the same keys
         static let volumeName  = CliOption(keys:["-v", "--volume", "DOCKER_BUILD_PERSISTENT_VOLUME"],
                                                     description:"Create a subdirectory in the .build directory. This separates the macOS build files from docker build files to make builds faster for each platform.",
                                                     usage: "-v [PLATFORM_NAME] ie: -v android",
                                                     requiresValue: true,
-                                                    defaultValue: "docker")
+                                                    defaultValue: "docker_volume")
         
     }
     public var dockerBuildOption: CliOption {

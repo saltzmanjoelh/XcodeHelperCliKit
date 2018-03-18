@@ -295,7 +295,7 @@ public struct XCHelper : CliRunnable {
     }
     func decode(xcactivityLog: URL) throws -> String? {
         let result = ProcessRunner.synchronousRun("/usr/bin/gunzip", arguments: ["-cd", xcactivityLog.path], printOutput: false, outputPrefix: nil)
-        guard let output = result.output, output.characters.count > 0 else {
+        guard let output = result.output, output.count > 0 else {
             throw XcodeHelperCliError.xcactivityLogDecode(message: result.error!)
         }
         let start = output.index(output.endIndex, offsetBy: -10) // succeeded

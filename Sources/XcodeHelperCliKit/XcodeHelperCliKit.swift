@@ -288,7 +288,7 @@ public struct XCHelper : CliRunnable {
         //get a list of the files sorted DESC
         let result = ProcessRunner.synchronousRun("/bin/ls", arguments: ["-t1", xcodeBuildDirURL.path])
         //filter xcactivitylogs and get the first one
-        guard let log = result.output?.components(separatedBy: "\n").flatMap({ $0.hasSuffix(".xcactivitylog") ? $0 : nil }).first else {
+        guard let log = result.output?.components(separatedBy: "\n").compactMap({ $0.hasSuffix(".xcactivitylog") ? $0 : nil }).first else {
             return nil
         }
         return xcodeBuildDirURL.appendingPathComponent(log)

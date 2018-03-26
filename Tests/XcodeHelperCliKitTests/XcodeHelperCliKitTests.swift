@@ -55,6 +55,58 @@ class XcodeHelperCliKitTests: XCTestCase {
         return tempDir
     }
     
+    func testGetYamlPathFromArgs_short() {
+        let fixture = XcodeHelpableFixture()
+        let xchelper = XCHelper(xcodeHelpable: fixture)
+        let path = UUID().uuidString
+        let args = ["appPath", XCHelper.changeDirectoryOption.short.rawValue, path]
+        
+        let result = xchelper.getYamlPathFromArgs(args)
+        
+        XCTAssertEqual(result, path)
+    }
+    func testGetYamlPathFromArgs_long() {
+        let fixture = XcodeHelpableFixture()
+        let xchelper = XCHelper(xcodeHelpable: fixture)
+        let path = UUID().uuidString
+        let args = ["appPath", XCHelper.changeDirectoryOption.long.rawValue, path]
+        
+        let result = xchelper.getYamlPathFromArgs(args)
+        
+        XCTAssertEqual(result, path)
+    }
+    func testGetYamlPathFromEnv_env() {
+        let fixture = XcodeHelpableFixture()
+        let xchelper = XCHelper(xcodeHelpable: fixture)
+        let path = UUID().uuidString
+        let env = ["COMMAND_\(XCHelper.changeDirectoryOption.envSuffix.rawValue)": path]
+        
+        let result = xchelper.getYamlPathFromEnv(env)
+        
+        XCTAssertEqual(result, path)
+    }
+    func testGetYamlPath_args() {
+        let fixture = XcodeHelpableFixture()
+        let xchelper = XCHelper(xcodeHelpable: fixture)
+        let path = UUID().uuidString
+        let args = ["appPath", XCHelper.changeDirectoryOption.long.rawValue, path]
+        
+        let result = xchelper.getYamlPath(args: args, env: [:])
+        
+        XCTAssertEqual(result, path)
+    }
+    func testGetYamlPath_env() {
+        let fixture = XcodeHelpableFixture()
+        let xchelper = XCHelper(xcodeHelpable: fixture)
+        let path = UUID().uuidString
+        let env = ["COMMAND_\(XCHelper.changeDirectoryOption.envSuffix.rawValue)": path]
+        
+        let result = xchelper.getYamlPath(args: [], env: env)
+        
+        XCTAssertEqual(result, path)
+    }
+    
+    
     func testHelpableStrings() {
         let fixture = XcodeHelpableFixture()
         let xchelper = XCHelper(xcodeHelpable: fixture)

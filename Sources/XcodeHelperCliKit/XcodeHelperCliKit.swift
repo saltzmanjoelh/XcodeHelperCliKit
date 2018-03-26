@@ -70,12 +70,56 @@ public struct XCHelper : CliRunnable {
     public var appUsage: String? {
         return "xchelper COMMAND [OPTIONS]"
     }
-    
+    public enum changeDirectoryOption: String {
+        case short = "-d"
+        case long = "--chdir"
+        case envSuffix = "CHDIR"
+        static var allRawValues: [String] {
+            return [changeDirectoryOption.short.rawValue,
+                    changeDirectoryOption.long.rawValue,
+                    changeDirectoryOption.envSuffix.rawValue]
+        }
+    }
     public func parseSourceCodePath(from argumentIndex: [String:[String]], with optionKey: String?) -> String {
         if let key = optionKey, let customDirectory = argumentIndex[key]?.first {
             return customDirectory
         }
         return FileManager.default.currentDirectoryPath
+    }
+    public func getYamlPath(args: [String], env: [String: String]) -> String {
+        if let argPath = getYamlPathFromArgs(args) {
+            return argPath
+        }
+        if let envPath = getYamlPathFromEnv(env) {
+            return envPath
+        }
+        return ProcessInfo.processInfo.environment["PWD"] ?? ""
+    }
+    public func getYamlPathFromArgs(_ args: [String]) -> String? {
+        var path: String?
+        //skip first arg, it's app path
+        if args.count > 1 {
+            for i in 1..<args.count-1 {//-1 last index but the last index won't have a value after it. -2
+                if args[i] == XCHelper.changeDirectoryOption.short.rawValue {
+                    path = args[i+1]
+                }else if args[i] == XCHelper.changeDirectoryOption.long.rawValue {
+                    path = args[i+1]
+                }
+            }
+            if let result = path {
+                return result
+            }
+        }
+        return nil
+    }
+    public func getYamlPathFromEnv(_ env: [String: String]) -> String? {
+        for key in env.keys {
+            if key.hasSuffix(XCHelper.changeDirectoryOption.envSuffix.rawValue),
+                let value = env[key] {
+                return value
+            }
+        }
+        return nil
     }
     
     
@@ -102,7 +146,7 @@ public struct XCHelper : CliRunnable {
                                                 usage: "xchelper update-packages [OPTIONS]",
                                                 requiresValue: false,
                                                 defaultValue:nil)
-        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "UPDATE_MACOS_PACKAGES_CHDIR"],
+        static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "UPDATE_MACOS_PACKAGES_\(changeDirectoryOption.envSuffix)"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
                                                 requiresValue:true,
@@ -145,7 +189,7 @@ public struct XCHelper : CliRunnable {
                                                 usage: "xchelper update-docker-packages [OPTIONS]",
                                                 requiresValue: false,
                                                 defaultValue:nil)
-        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "UPDATE_DOCKER_PACKAGES_CHDIR"],
+        static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "UPDATE_DOCKER_PACKAGES_\(changeDirectoryOption.envSuffix)"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
                                                 requiresValue:true,
@@ -196,7 +240,7 @@ public struct XCHelper : CliRunnable {
                                                     usage: nil,
                                                     requiresValue: false,
                                                     defaultValue: nil)
-        static let changeDirectory      = CliOption(keys:["-d", "--chdir", "DOCKER_BUILD_CHDIR"],
+        static let changeDirectory      = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "DOCKER_BUILD_\(changeDirectoryOption.envSuffix)"],
                                                     description:"Change the current working directory.",
                                                     usage: nil,
                                                     requiresValue: true,
@@ -313,7 +357,7 @@ public struct XCHelper : CliRunnable {
 //                                                    usage: "xchelper clean [OPTIONS]",
 //                                                    requiresValue: false,
 //                                                    defaultValue:nil)
-//        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "CLEAN_CHDIR"],
+//        static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short, changeDirectoryOption.long.rawValue, "CLEAN_\(changeDirectoryOption.envSuffix)"],
 //                                                description:"Change the current working directory.",
 //                                                usage:nil,
 //                                                requiresValue:true,
@@ -339,7 +383,7 @@ public struct XCHelper : CliRunnable {
                                                     usage: "xchelper symlink-dependencies [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue:nil)
-        static let changeDirectory  = CliOption(keys:["-d", "--chdir", "SYMLINK_DEPENDENCIES_CHDIR"],
+        static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "SYMLINK_DEPENDENCIES_\(changeDirectoryOption.envSuffix)"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
                                                 requiresValue:true,
@@ -425,7 +469,7 @@ public struct XCHelper : CliRunnable {
                                                     usage: nil,
                                                     requiresValue:true,
                                                     defaultValue:nil)
-        static let credentialsFile      = CliOption(keys:["-d", "--credentials", "UPLOAD_ARCHIVE_CREDENTIALS"],
+        static let credentialsFile      = CliOption(keys:["-c", "--credentials", "UPLOAD_ARCHIVE_CREDENTIALS"],
                                                     description:"The secret for the key.",
                                                     usage: nil,
                                                     requiresValue:true,
@@ -470,7 +514,7 @@ public struct XCHelper : CliRunnable {
                                                     usage: "xchelper git-tag [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue: nil)
-        static let changeDirectory      = CliOption(keys:["-d", "--chdir", "GIT_TAG_CHDIR"],
+        static let changeDirectory      = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "GIT_TAG_\(changeDirectoryOption.envSuffix)"],
                                                     description:"Change the current working directory.",
                                                     usage:nil,
                                                     requiresValue:true,

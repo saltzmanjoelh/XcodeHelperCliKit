@@ -87,13 +87,14 @@ public struct XCHelper : CliRunnable {
         return FileManager.default.currentDirectoryPath
     }
     public func getYamlPath(args: [String], env: [String: String]) -> String {
+        var path = ProcessInfo.processInfo.environment["PWD"] ?? ""
         if let argPath = getYamlPathFromArgs(args) {
-            return argPath
+            path = argPath
         }
         if let envPath = getYamlPathFromEnv(env) {
-            return envPath
+            path = envPath
         }
-        return ProcessInfo.processInfo.environment["PWD"] ?? ""
+        return path.appending(".xcodehelper")
     }
     public func getYamlPathFromArgs(_ args: [String]) -> String? {
         var path: String?
@@ -554,8 +555,8 @@ public struct XCHelper : CliRunnable {
                 versionString = version
              
             }else if let componentString = argumentIndex[gitTag.incrementOption.keys.first!]?.first,
-                    let component = GitTagComponent.init(stringValue: componentString) {
-                try xcodeHelpable.incrementGitTag(component: component, at: sourcePath, shouldLog: true)
+                let component = GitTagComponent.init(stringValue: componentString) {
+                versionString = try xcodeHelpable.incrementGitTag(component: component, at: sourcePath, shouldLog: true)
                 
             }else{
                 guard let componentString = argumentIndex[gitTag.incrementOption.keys.first!] else {

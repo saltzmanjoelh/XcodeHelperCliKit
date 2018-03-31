@@ -169,10 +169,10 @@ public struct XCHelper : CliRunnable {
         updateMacOsPackagesOption.action = handleUpdatePackages
         return updateMacOsPackagesOption
     }
-    public func handleUpdatePackages(option:CliOption) throws {
+    public func handleUpdatePackages(option:CliOption) throws -> ProcessResult {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: updateMacOsPackages.changeDirectory.keys.first)
-        try xcodeHelpable.updateMacOsPackages(at: sourcePath, shouldLog: true)
+        let updateResult = try xcodeHelpable.updateMacOsPackages(at: sourcePath, shouldLog: true)
         
 //        When I populate the argumentIndex i'm not populating with all keys
 //        from the xc exten we pass long version of arg
@@ -182,6 +182,8 @@ public struct XCHelper : CliRunnable {
         if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.symlink.keys.first!) {
             try xcodeHelpable.symlinkDependencies(at: sourcePath, shouldLog: true)
         }
+        
+        return updateResult
     }
     
     struct updateDockerPackages {
@@ -215,13 +217,13 @@ public struct XCHelper : CliRunnable {
         updateOption.action = handleUpdateDockerPackages
         return updateOption
     }
-    public func handleUpdateDockerPackages(option:CliOption) throws {
+    public func handleUpdateDockerPackages(option:CliOption) throws -> ProcessResult {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: updateMacOsPackages.changeDirectory.keys.first)
         let imageName = argumentIndex[updateDockerPackages.imageName.keys.first!]?.first ?? updateDockerPackages.imageName.defaultValue!
         let volumeName = argumentIndex[updateDockerPackages.volumeName.keys.first!]?.first ?? updateDockerPackages.volumeName.defaultValue!
         
-        try xcodeHelpable.updateDockerPackages(at: sourcePath, inImage: imageName, withVolume: volumeName, shouldLog: true)
+        return try xcodeHelpable.updateDockerPackages(at: sourcePath, inImage: imageName, withVolume: volumeName, shouldLog: true)
     }
     
     // MARK: DockerBuild
@@ -277,7 +279,8 @@ public struct XCHelper : CliRunnable {
         dockerBuildOption.action = handleDockerBuild
         return dockerBuildOption
     }
-    public func handleDockerBuild(option:CliOption) throws {
+    @discardableResult
+    public func handleDockerBuild(option:CliOption) throws -> ProcessResult {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: dockerBuild.changeDirectory.keys.first)
         var runOptions = [DockerRunOption]()
@@ -305,11 +308,11 @@ public struct XCHelper : CliRunnable {
         
         if let buildDirectory = argumentIndex[dockerBuild.buildOnSuccess.keys.first!]?.first {
             if let buildURL = xcodeBuildLogDirectory(from: buildDirectory), try !lastBuildWasSuccess(at: buildURL) {
-                return
+                return ProcessResult(output: "Last build failed. Skipped building in Docker", error: nil, exitCode: EXIT_FAILURE)
             }
         }
         
-        try xcodeHelpable.dockerBuild(sourcePath, with: runOptions, using: buildConfiguration, in: imageName, persistentVolumeName: persistentVolume, shouldLog: true)
+        return try xcodeHelpable.dockerBuild(sourcePath, with: runOptions, using: buildConfiguration, in: imageName, persistentVolumeName: persistentVolume, shouldLog: true)
     }
     //we have the func here instead of XcodeHelperKit because it requires use of ProcessInfo which is more likely to be available here
     //check BUILD_DIR/../../Logs/Build `ls -t` first item, it's gziped archive, last word in file is success or failed
@@ -399,7 +402,7 @@ public struct XCHelper : CliRunnable {
     public func handleSymlinkDependencies(option:CliOption) throws {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: symlinkDependencies.changeDirectory.keys.first)
-        try xcodeHelpable.symlinkDependencies(at: sourcePath, shouldLog: true)
+        return try xcodeHelpable.symlinkDependencies(at: sourcePath, shouldLog: true)
     }
     
     
@@ -422,7 +425,7 @@ public struct XCHelper : CliRunnable {
         createArchiveOption.action = handleCreateArchive
         return createArchiveOption
     }
-    public func handleCreateArchive(option:CliOption) throws {
+    public func handleCreateArchive(option:CliOption) throws -> ProcessResult {
         let argumentIndex = option.argumentIndex
         guard let paths = argumentIndex[createArchive.command.keys.first!] else {
             throw XcodeHelperError.createArchive(message: "You didn't provide any paths.")
@@ -439,7 +442,7 @@ public struct XCHelper : CliRunnable {
         }
         
         let filePaths = Array(paths[1..<paths.count])
-        try xcodeHelpable.createArchive(at: archivePath, with: filePaths, flatList: flatList, shouldLog: true)
+        return try xcodeHelpable.createArchive(at: archivePath, with: filePaths, flatList: flatList, shouldLog: true)
     }
     
     
@@ -542,16 +545,17 @@ public struct XCHelper : CliRunnable {
         gitTagOption.action = handleGitTag
         return gitTagOption
     }
-    public func handleGitTag(option:CliOption) throws {
+    public func handleGitTag(option:CliOption) throws -> ProcessResult {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: gitTag.changeDirectory.keys.first!)
         var outputString: String?
+        var processResult: ProcessResult?
         do {
             var versionString: String?
 
             //update from user input
             if let version = argumentIndex[gitTag.versionOption.keys.first!]?.first {
-                try xcodeHelpable.gitTag(version, repo: sourcePath, shouldLog: true)
+                processResult = try xcodeHelpable.gitTag(version, repo: sourcePath, shouldLog: true)
                 versionString = version
              
             }else if let componentString = argumentIndex[gitTag.incrementOption.keys.first!]?.first,
@@ -579,12 +583,13 @@ public struct XCHelper : CliRunnable {
         } catch XcodeHelperError.gitTag(_) {
             //no current tag, just start it at 0.0.1
             outputString = "0.0.1"
-            try xcodeHelpable.gitTag(outputString!, repo: sourcePath, shouldLog: true)
+            processResult = try xcodeHelpable.gitTag(outputString!, repo: sourcePath, shouldLog: true)
         }
         
         //if let str = outputString {
         //    print(str)
         //}
+        return processResult ?? ProcessResult(output: nil, error: "Failed to execute", exitCode: EXIT_FAILURE)
     }
     
     
@@ -614,7 +619,7 @@ public struct XCHelper : CliRunnable {
         return createXcarchiveOption
     }
     //returns the path to the new xcarchive
-    public func handleCreateXcarchive(option:CliOption) throws {
+    public func handleCreateXcarchive(option:CliOption) throws -> ProcessResult {
         let argumentIndex = option.argumentIndex
         guard var paths = argumentIndex[createXcarchive.command.keys.first!] else {
             throw XcodeHelperError.createXcarchive(message: "You didn't provide any paths.")
@@ -632,7 +637,7 @@ public struct XCHelper : CliRunnable {
             throw XcodeHelperError.createXcarchive(message: "You didn't provide the scheme to include in the plist.")
         }
         paths.removeFirst()
-        _ = try xcodeHelpable.createXcarchive(in: archivePath, with: paths.first!, from: scheme, shouldLog: true)
+        return try xcodeHelpable.createXcarchive(in: archivePath, with: paths.first!, from: scheme, shouldLog: true)
         //print(outputString)
     }
     

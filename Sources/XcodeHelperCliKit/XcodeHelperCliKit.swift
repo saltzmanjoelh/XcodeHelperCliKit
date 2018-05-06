@@ -477,7 +477,7 @@ public struct XCHelper : CliRunnable {
                                                     requiresValue:true,
                                                     defaultValue:nil)
         static let credentialsFile      = CliOption(keys:["-c", "--credentials", "UPLOAD_ARCHIVE_CREDENTIALS"],
-                                                    description:"If you don't want to provide the key and secret in a command, you can provide the path to a comma separated credentials file. \"$SECRET,$SECRET\" ",
+                                                    description:"If you don't want to provide the key and secret in a command, you can provide the path to a comma separated credentials file. \"$KEY,$SECRET\" ",
                                                     usage: nil,
                                                     requiresValue:true,
                                                     defaultValue:nil)

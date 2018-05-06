@@ -85,10 +85,10 @@ struct XcodeHelpableFixture: XcodeHelpable {
     {
         return (testIncrementGitTag?(component, sourcePath, shouldLog))!
     }
-    var testGitTag: ((String, String) throws -> Void)?
-    func gitTag(_ tag: String, repo sourcePath: String, shouldLog: Bool) throws
+    var testGitTag: ((String, String) throws -> ProcessResult)?
+    func gitTag(_ tag: String, repo sourcePath: String, shouldLog: Bool) throws -> ProcessResult
     {
-        (try testGitTag?(tag, sourcePath))
+        return (try testGitTag?(tag, sourcePath))!
     }
     var testPushGitTag: ((String, String) -> Void)?
     func pushGitTag(tag: String, at sourcePath: String, shouldLog: Bool) throws
@@ -96,8 +96,8 @@ struct XcodeHelpableFixture: XcodeHelpable {
         (testPushGitTag?(tag, sourcePath))
     }
     
-    var testCreateXcarchive: ((String, String, String) throws -> String)?
-    @discardableResult func createXcarchive(in dirPath: String, with binaryPath: String, from schemeName: String, shouldLog: Bool) throws -> String
+    var testCreateXcarchive: ((String, String, String) throws -> ProcessResult)?
+    @discardableResult func createXcarchive(in dirPath: String, with binaryPath: String, from schemeName: String, shouldLog: Bool) throws -> ProcessResult
     {
         return (try testCreateXcarchive?(dirPath, binaryPath, schemeName))!
     }

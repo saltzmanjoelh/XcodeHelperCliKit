@@ -169,6 +169,7 @@ public struct XCHelper : CliRunnable {
         updateMacOsPackagesOption.action = handleUpdatePackages
         return updateMacOsPackagesOption
     }
+    @discardableResult
     public func handleUpdatePackages(option:CliOption) throws -> ProcessResult {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: updateMacOsPackages.changeDirectory.keys.first)
@@ -217,6 +218,7 @@ public struct XCHelper : CliRunnable {
         updateOption.action = handleUpdateDockerPackages
         return updateOption
     }
+    @discardableResult
     public func handleUpdateDockerPackages(option:CliOption) throws -> ProcessResult {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: updateMacOsPackages.changeDirectory.keys.first)
@@ -425,6 +427,7 @@ public struct XCHelper : CliRunnable {
         createArchiveOption.action = handleCreateArchive
         return createArchiveOption
     }
+    @discardableResult
     public func handleCreateArchive(option:CliOption) throws -> ProcessResult {
         let argumentIndex = option.argumentIndex
         guard let paths = argumentIndex[createArchive.command.keys.first!] else {
@@ -482,6 +485,8 @@ public struct XCHelper : CliRunnable {
     public var uploadArchiveOption: CliOption {
         var uploadArchveOption = uploadArchive.command
         uploadArchveOption.requiredArguments = [uploadArchive.bucket, uploadArchive.region]//(key,secret) OR credentials check in handler
+        uploadArchveOption.optionalArguments = [uploadArchive.key, uploadArchive.secret, uploadArchive.credentialsFile]
+        uploadArchveOption.action = handleUploadArchive
         return uploadArchveOption
     }
     public func handleUploadArchive(option:CliOption) throws {
@@ -545,6 +550,7 @@ public struct XCHelper : CliRunnable {
         gitTagOption.action = handleGitTag
         return gitTagOption
     }
+    @discardableResult
     public func handleGitTag(option:CliOption) throws -> ProcessResult {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: gitTag.changeDirectory.keys.first!)

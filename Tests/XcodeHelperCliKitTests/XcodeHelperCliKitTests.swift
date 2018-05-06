@@ -93,7 +93,7 @@ class XcodeHelperCliKitTests: XCTestCase {
         
         let result = xchelper.getYamlPath(args: args, env: [:])
         
-        XCTAssertEqual(result, path)
+        XCTAssertEqual(result, path+".xcodehelper")
     }
     func testGetYamlPath_env() {
         let fixture = XcodeHelpableFixture()
@@ -103,7 +103,7 @@ class XcodeHelperCliKitTests: XCTestCase {
         
         let result = xchelper.getYamlPath(args: [], env: env)
         
-        XCTAssertEqual(result, path)
+        XCTAssertEqual(result, path+".xcodehelper")
     }
     
     
@@ -782,6 +782,7 @@ class XcodeHelperCliKitTests: XCTestCase {
                 didCallGitTag = true
                 XCTAssertEqual(tag, expectations[XCHelper.gitTag.versionOption]!.first)
                 XCTAssertEqual(sourcePath, expectations[XCHelper.gitTag.changeDirectory]!.first)
+                return emptyProcessResult
             }
             let xchelper = XCHelper(xcodeHelpable: fixture)
             var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
@@ -894,6 +895,9 @@ class XcodeHelperCliKitTests: XCTestCase {
                                 XCHelper.gitTag.changeDirectory: ["/tmp/path"],
                                 XCHelper.gitTag.pushOption:[]]
             var fixture = XcodeHelpableFixture()
+            fixture.testGitTag = { (_, _) -> ProcessResult in
+                return emptyProcessResult
+            }
             fixture.testPushGitTag = { (tag: String, sourcePath: String) in
                 didCallGitPush = true
                 XCTAssertEqual(tag, expectations[XCHelper.gitTag.versionOption]!.first)
@@ -921,6 +925,7 @@ class XcodeHelperCliKitTests: XCTestCase {
                 }
                 didCallGitTag = true
                 XCTAssertEqual(tag, "0.0.1")
+                return emptyProcessResult
             }
             let xchelper = XCHelper(xcodeHelpable: fixture)
             var option = prepare(options: [xchelper.gitTagOption], with: expectations)!.first
@@ -1027,7 +1032,7 @@ class XcodeHelperCliKitTests: XCTestCase {
                 XCTAssertEqual(binaryPath, expectations[XCHelper.createXcarchive.command]?[1])
 //                XCTAssertEqual(name, expectations[XCHelper.createXcarchive.nameOption]?.first!)
                 XCTAssertEqual(schemeName, expectations[XCHelper.createXcarchive.schemeOption]?.first!)
-                return ""
+                return emptyProcessResult
             }
             let xchelper = XCHelper(xcodeHelpable: fixture)
             let option = prepare(options: [xchelper.createXcarchiveOption], with: expectations)!.first?
@@ -1073,7 +1078,7 @@ class XcodeHelperCliKitTests: XCTestCase {
                 XCTAssertEqual(binary, binaryPath)
 //                XCTAssertNotEqual(named, name)//cli option takes precedence over this one
                 XCTAssertNotEqual(schemeName, scheme)//cli option takes precedence over this one
-                return ""
+                return emptyProcessResult
             }
             let arguments = [XCHelper.createXcarchive.command.keys.first!, archivePath, binaryPath,
                             /*XCHelper.createXcarchive.nameOption.keys.first!, UUID().uuidString,*/

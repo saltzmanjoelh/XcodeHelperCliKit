@@ -14,7 +14,9 @@ extension Dictionary {
             //For cli options, if the key is there it's assumed to be an arg that doesn't require a value
             //Like the -a in `ls -a'
             return stringValue == "true"
+        } else if let values = value as? [String] {
+            return values.first == "true"
         }
-        return true
+        return false
     }
 }

@@ -12,33 +12,6 @@ import CliRunnable
 import DockerProcess
 import ProcessRunner
 
-//Redundant
-//public enum Command: String {
-//
-//    case updateMacOsPackages = "Update Packages - macOS"
-//    case updateDockerPackages = "Update Packages - Docker"
-//    case dockerBuild = "Build in Docker"
-//    case symlinkDependencies = "Symlink Dependencies"
-//    case createArchive = "Create Archive"
-//    case createXcarchive = "Create XCArchive"
-//    case uploadArchive = "Upload Archive"
-//    case gitTag = "Git Tag"
-//
-//
-//    static var allValues: [Command] {
-//        get {
-//            return [.updateMacOsPackages,
-//            .updateDockerPackages,
-//            .dockerBuild,
-//            .symlinkDependencies,
-//            .createArchive,
-//            .createXcarchive,
-//            .uploadArchive,
-//            .gitTag]
-//        }
-//    }
-//}
-
 public enum XcodeHelperCliError : Error, CustomStringConvertible {
     case xcactivityLogDecode(message:String)
     public var description : String {
@@ -64,7 +37,7 @@ public struct XCHelper : CliRunnable {
     }
     public var description: String? {
         get {
-            return "xchelper keeps you in Xcode and off the command line. You can build and run tests on other platforms through Docker, fetch Swift packages, keep your \"Dependencies\" group in Xcode referencing the correct paths and tar and upload your binary to AWS S3 buckets."
+            return "xchelper keeps you in Xcode and off the command line. You can build and run tests on other platforms through Docker, fetch Swift packages, keep your dependencies in Xcode referencing the correct paths and updates and tar and upload your binary to AWS S3 buckets."
         }
     }
     public var appUsage: String? {
@@ -142,9 +115,9 @@ public struct XCHelper : CliRunnable {
     
     // MARK: UpdatePackages
     struct updateMacOsPackages {
-        static let command          = CliOption(keys: [Command.updateMacOSPackages.rawValue, "UPDATE_MACOS_PACKAGES"],
-                                                description: "Update the package dependencies via 'swift package update'. Optionally, symlink your dependencies and regenerate your xcode project to prevent future updates from requiring a new xcode project to be built.",
-                                                usage: "xchelper update-packages [OPTIONS]",
+        static let command          = CliOption(keys: [Command.updateMacOSPackages.cliName, Command.updateMacOSPackages.envName],
+                                                description: Command.updateMacOSPackages.description,
+                                                usage: "xchelper \(Command.updateMacOSPackages.cliName) [OPTIONS]",
                                                 requiresValue: false,
                                                 defaultValue:nil)
         static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "UPDATE_MACOS_PACKAGES_\(changeDirectoryOption.envSuffix)"],
@@ -188,9 +161,9 @@ public struct XCHelper : CliRunnable {
     }
     
     struct updateDockerPackages {
-        static let command          = CliOption(keys: [Command.updateDockerPackages.rawValue, "UPDATE_DOCKER_PACKAGES"],
-                                                description: "Update the packages for your Docker container in the persistent volume directory",
-                                                usage: "xchelper update-docker-packages [OPTIONS]",
+        static let command          = CliOption(keys: [Command.updateDockerPackages.cliName, Command.updateDockerPackages.envName],
+                                                description: Command.updateDockerPackages.description,
+                                                usage: "xchelper \(Command.updateDockerPackages.cliName) [OPTIONS]",
                                                 requiresValue: false,
                                                 defaultValue:nil)
         static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "UPDATE_DOCKER_PACKAGES_\(changeDirectoryOption.envSuffix)"],
@@ -230,9 +203,9 @@ public struct XCHelper : CliRunnable {
     
     // MARK: DockerBuild
     struct dockerBuild {
-        static let command              = CliOption(keys: [Command.dockerBuild.rawValue, "DOCKER_BUILD"],
-                                                    description: "Build a Swift package on another platform like Linux and have the build errors appear in Xcode.",
-                                                    usage: "xchelper build [OPTIONS]",
+        static let command              = CliOption(keys: [Command.dockerBuild.cliName, Command.dockerBuild.envName],
+                                                    description: Command.dockerBuild.description,
+                                                    usage: "xchelper \(Command.dockerBuild.cliName) [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue: nil)
         static let buildOnSuccess       = CliOption(keys: ["-s", "--after-success", "DOCKER_BUILD_AFTER_SUCCESS"],
@@ -384,9 +357,9 @@ public struct XCHelper : CliRunnable {
     
     // MARK: SymlinkDependencies
     struct symlinkDependencies {
-        static let command              = CliOption(keys: [Command.symlinkDependencies.rawValue, "SYMLINK_DEPENDENCIES"],
-                                                    description: "Create symbolic links for the dependency packages after `swift package update` so you don't have to generate a new xcode project.",
-                                                    usage: "xchelper symlink-dependencies [OPTIONS]",
+        static let command              = CliOption(keys: [Command.symlinkDependencies.cliName, Command.symlinkDependencies.envName],
+                                                    description: Command.symlinkDependencies.description,
+                                                    usage: "xchelper \(Command.symlinkDependencies.cliName) [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue:nil)
         static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "SYMLINK_DEPENDENCIES_\(changeDirectoryOption.envSuffix)"],
@@ -410,9 +383,9 @@ public struct XCHelper : CliRunnable {
     
     // MARK: CreateArchive
     struct createArchive {
-        static let command              = CliOption(keys: [Command.createArchive.rawValue, "CREATE_ARCHIVE"],
-                                                    description: "Archive files with tar.",
-                                                    usage: "xchelper create-archive ARCHIVE_PATH FILES [OPTIONS]. ARCHIVE_PATH the full path and filename for the archive to be created. FILES is a space separated list of full paths to the files you want to archive.",
+        static let command              = CliOption(keys: [Command.createArchive.cliName, Command.createArchive.envName],
+                                                    description:Command.createArchive.description ,
+                                                    usage: "xchelper \(Command.createArchive.cliName) ARCHIVE_PATH FILES [OPTIONS]. ARCHIVE_PATH the full path and filename for the archive to be created. FILES is a space separated list of full paths to the files you want to archive.",
                                                     requiresValue: false,
                                                     defaultValue: nil)
         static let flatList   = CliOption(keys:["-f", "--flat-list", "CREATE_ARCHIVE_FLAT_LIST"],
@@ -451,9 +424,9 @@ public struct XCHelper : CliRunnable {
     
     // MARK: UploadArchive
     struct uploadArchive {
-        static let command              = CliOption(keys: [Command.uploadArchive.rawValue, "UPLOAD_ARCHIVE"],
-                                                    description: "Upload an archive to S3",
-                                                    usage: "xchelper upload-archive ARCHIVE_PATH [OPTIONS]. ARCHIVE_PATH the path of the archive that you want to upload to S3.",
+        static let command              = CliOption(keys: [Command.uploadArchive.cliName, Command.uploadArchive.envName],
+                                                    description: Command.uploadArchive.description,
+                                                    usage: "xchelper \(Command.uploadArchive.cliName) ARCHIVE_PATH [OPTIONS]. ARCHIVE_PATH the path of the archive that you want to upload to S3.",
                                                     requiresValue: true,
                                                     defaultValue:nil)
         static let bucket               = CliOption(keys:["-b", "--bucket", "UPLOAD_ARCHIVE_S3_BUCKET"],
@@ -518,9 +491,9 @@ public struct XCHelper : CliRunnable {
     
     // MARK: GitTag
     struct gitTag {
-        static let command              = CliOption(keys: [Command.gitTag.rawValue, "GIT_TAG"],
-                                                    description: "Update your package's git repo's semantic versioned tag",
-                                                    usage: "xchelper git-tag [OPTIONS]",
+        static let command              = CliOption(keys: [Command.gitTag.cliName, Command.gitTag.envName],
+                                                    description: Command.gitTag.description,
+                                                    usage: "xchelper \(Command.gitTag.cliName) [OPTIONS]",
                                                     requiresValue: false,
                                                     defaultValue: nil)
         static let changeDirectory      = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "GIT_TAG_\(changeDirectoryOption.envSuffix)"],
@@ -602,9 +575,9 @@ public struct XCHelper : CliRunnable {
     // MARK: CreateXcarchive
     struct createXcarchive {
         
-        static let command              = CliOption(keys: [Command.createXcarchive.rawValue, "CREATE_XCARCHIVE"],
-                                                    description: "Store your built binary in an xcarchive where Xcode's Organizer can keep track",
-                                                    usage: "xchelper create-xcarchive XCARCHIVE_PATH [OPTIONS]. XCARCHIVE_PATH is the directory (.xcarchive) where you want the Info.plist created in. ",
+        static let command              = CliOption(keys: [Command.createXcarchive.cliName, Command.createXcarchive.envName],
+                                                    description: Command.createXcarchive.description,
+                                                    usage: "xchelper \(Command.createXcarchive.cliName) XCARCHIVE_PATH [OPTIONS]. XCARCHIVE_PATH is the directory (.xcarchive) where you want the Info.plist created in. ",
                                                     requiresValue: true,
                                                     defaultValue: nil)
 //        static let nameOption          = CliOption(keys: ["-n", "--name", "CREATE_PLIST_APP_NAME"],

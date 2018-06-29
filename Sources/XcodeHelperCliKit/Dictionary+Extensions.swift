@@ -7,16 +7,26 @@
 
 import Foundation
 
-extension Dictionary {
+extension Dictionary where Value: Collection {
+    //For cli options, if the key is there it's assumed to be an arg that doesn't require a value
+    //Like the -a in `ls -a'
     func yamlBoolValue(forKey key: Key) -> Bool {
-        guard let value = self[key] else { return false }
-        if let stringValue = value as? String {
-            //For cli options, if the key is there it's assumed to be an arg that doesn't require a value
-            //Like the -a in `ls -a'
-            return stringValue == "true"
-        } else if let values = value as? [String] {
-            return values.first == "true"
+        guard let values = self[key] else { return self.keys.contains(key) }
+        if let stringValue = values as? [String],
+            let boolValue = stringValue.first?.boolValue() {
+            return boolValue
         }
-        return false
+        return true //it's a
+    }
+}
+extension Dictionary where Value: StringProtocol {
+    func yamlBoolValue(forKey key: Key) -> Bool {
+        //For cli options, if the key is there it's assumed to be an arg that doesn't require a value
+        //Like the -a in `ls -a'
+        guard let value = self[key] else { return self.keys.contains(key) }
+        if let stringValue = value as? String {
+            return stringValue.boolValue()
+        }
+        return true //it's a
     }
 }

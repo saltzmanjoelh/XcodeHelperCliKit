@@ -150,10 +150,10 @@ public struct XCHelper : CliRunnable {
         
 //        When I populate the argumentIndex i'm not populating with all keys
 //        from the xc exten we pass long version of arg
-        if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.generateXcodeProject.keys.first!) {
+        if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.generateXcodeProject.keys.first!) == true {
             try xcodeHelpable.generateXcodeProject(at: sourcePath, shouldLog: true)
         }
-        if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.symlink.keys.first!) {
+        if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.symlink.keys.first!) == true {
             try xcodeHelpable.symlinkDependencies(at: sourcePath, shouldLog: true)
         }
         
@@ -267,14 +267,13 @@ public struct XCHelper : CliRunnable {
         guard let imageName = argumentIndex[dockerBuild.imageName.keys.first!]?.first else {
             throw XcodeHelperError.dockerBuild(message: "\(dockerBuild.imageName.keys) not provided.", exitCode: 1)
         }
-        let autoDelete = argumentIndex.yamlBoolValue(forKey: dockerBuild.removeWhenDone.keys.first!)
         let persistentVolume = argumentIndex[dockerBuild.volumeName.keys.first!]?.first
 //        let customOptions = argumentIndex[dockerBuild.volumeName.keys.first!]
         
         if let containerName = argumentIndex[dockerBuild.containerName.keys.first!]?.first {
             runOptions.append(.container(name: containerName))
         }
-        if autoDelete {
+        if argumentIndex.yamlBoolValue(forKey: dockerBuild.removeWhenDone.keys.first!) == true {
             runOptions.append(.removeWhenDone)
         }
 //        if let options = customOptions {
@@ -554,7 +553,7 @@ public struct XCHelper : CliRunnable {
 
             if let tag = versionString {
                 outputString = tag
-                if argumentIndex.yamlBoolValue(forKey: gitTag.pushOption.keys.first!) {
+                if argumentIndex.yamlBoolValue(forKey: gitTag.pushOption.keys.first!) == true {
                     try xcodeHelpable.pushGitTag(tag: tag, at: sourcePath, shouldLog: true)
                 }
             }

@@ -223,7 +223,7 @@ class XcodeHelperCliKitTests: XCTestCase {
         do{
             let path = "/tmp/\(UUID().uuidString)"
             let expectations = [XCHelper.updateMacOsPackages.changeDirectory: [path],
-                                XCHelper.updateMacOsPackages.generateXcodeProject: [path]]
+                                XCHelper.updateMacOsPackages.generateXcodeProject: ["true"]]
             var fixture = XcodeHelpableFixture()
             fixture.testUpdateMacOsPackages = { (sourcePath:String) -> ProcessResult in
                 return emptyProcessResult
@@ -248,7 +248,7 @@ class XcodeHelperCliKitTests: XCTestCase {
         do{
             let path = "/tmp/\(UUID().uuidString)"
             let expectations = [XCHelper.updateMacOsPackages.changeDirectory: [path],
-                                XCHelper.updateMacOsPackages.symlink: [path]]
+                                XCHelper.updateMacOsPackages.symlink: ["true"]]
             var fixture = XcodeHelpableFixture()
             fixture.testUpdateMacOsPackages = { (sourcePath:String) -> ProcessResult in
                 return emptyProcessResult
@@ -887,7 +887,41 @@ class XcodeHelperCliKitTests: XCTestCase {
             XCTFail("Error: \(e)")
         }
     }
-    
+    func testYamlBoolValue_emptyArray() {
+        let argumentIndex: [String: [String]] = ["key": []]
+        
+        let result = argumentIndex.yamlBoolValue(forKey: "key")
+        
+        XCTAssertTrue(result)
+    }
+    func testYamlBoolValue_oneArray() {
+        let argumentIndex: [String: [String]] = ["key": ["1"]]
+        
+        let result = argumentIndex.yamlBoolValue(forKey: "key")
+        
+        XCTAssertTrue(result)
+    }
+    func testYamlBoolValue_trueArray() {
+        let argumentIndex: [String: [String]] = ["key": ["true"]]
+        
+        let result = argumentIndex.yamlBoolValue(forKey: "key")
+        
+        XCTAssertTrue(result)
+    }
+    func testYamlBoolValue_zeroArray() {
+        let argumentIndex: [String: [String]] = ["key": ["0"]]
+        
+        let result = argumentIndex.yamlBoolValue(forKey: "key")
+        
+        XCTAssertFalse(result)
+    }
+    func testYamlBoolValue_falseArray() {
+        let argumentIndex: [String: [String]] = ["key": ["false"]]
+        
+        let result = argumentIndex.yamlBoolValue(forKey: "key")
+        
+        XCTAssertFalse(result)
+    }
     func testHandleGitTag_push(){
         do{
             var didCallGitPush = false

@@ -130,15 +130,20 @@ public struct XCHelper : CliRunnable {
                                                 usage: nil,
                                                 requiresValue:false,
                                                 defaultValue: nil)
-        static let symlink          = CliOption(keys:["-s", "--symlink", "UPDATE_PACKAGES_SYMLINK"],
-                                                description:"Create symbolic links for the dependency 'Packages' after `swift package update` so you don't have to generate a new xcode project.",
+        static let recursive          = CliOption(keys:["-r", "--recursive", "UPDATE_PACKAGES_RECURSIVE"],
+                                                description:"Recursively search subdirectories for .xcodeprojs that need their dependencies updated. If you have a main application project which is not managed by SPM, you can create a subdirectory which is an SPM managed project. Then, use this to update those dependencies from the main project.",
                                                 usage: nil,
                                                 requiresValue:false,
                                                 defaultValue: nil)
+//        static let symlink          = CliOption(keys:["-s", "--symlink", "UPDATE_PACKAGES_SYMLINK"],
+//                                                description:"Create symbolic links for the dependency 'Packages' after `swift package update` so you don't have to generate a new xcode project.",
+//                                                usage: nil,
+//                                                requiresValue:false,
+//                                                defaultValue: nil)
     }
     public var updateMacOsPackagesOption: CliOption {
         var updateMacOsPackagesOption = updateMacOsPackages.command
-        updateMacOsPackagesOption.optionalArguments = [updateMacOsPackages.changeDirectory, updateMacOsPackages.generateXcodeProject, updateMacOsPackages.symlink]
+        updateMacOsPackagesOption.optionalArguments = [updateMacOsPackages.changeDirectory, updateMacOsPackages.generateXcodeProject, updateMacOsPackages.recursive]
         updateMacOsPackagesOption.action = handleUpdatePackages
         return updateMacOsPackagesOption
     }
@@ -146,16 +151,35 @@ public struct XCHelper : CliRunnable {
     public func handleUpdatePackages(option:CliOption) throws -> ProcessResult {
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: updateMacOsPackages.changeDirectory.keys.first)
-        let updateResult = try xcodeHelpable.updateMacOsPackages(at: sourcePath, shouldLog: true)
+        var sourcePaths = [sourcePath]
+        if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.recursive.keys.first!) == true {
+            if #available(OSX 10.11, *) {
+                sourcePaths = xcodeHelpable.recursiveXcodeProjects(at: sourcePath)
+            } else {
+                print("--recursive is only available on 10.11 or higher")
+            }
+        }
+        var output = [String]()
+        for sourcePath in sourcePaths {
+            let result = try xcodeHelpable.updateMacOsPackages(at: sourcePath, shouldLog: true)
+            guard result.error == nil else {
+                return result
+            }
+            output.append(result.output ?? "")
+        }
         
 //        When I populate the argumentIndex i'm not populating with all keys
 //        from the xc exten we pass long version of arg
         if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.generateXcodeProject.keys.first!) == true {
             try xcodeHelpable.generateXcodeProject(at: sourcePath, shouldLog: true)
         }
-        if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.symlink.keys.first!) == true {
-            try xcodeHelpable.symlinkDependencies(at: sourcePath, shouldLog: true)
-        }
+//        if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.symlink.keys.first!) == true {
+//            try xcodeHelpable.symlinkDependencies(at: sourcePath, shouldLog: true)
+//        }
+        
+        let updateResult = ProcessResult(output: output.joined(separator: "\n"),
+                                         error: nil,
+                                         exitCode: 0)
         
         return updateResult
     }

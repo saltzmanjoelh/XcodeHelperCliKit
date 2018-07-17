@@ -16,6 +16,7 @@ import XcodeHelperKit
 let emptyProcessResult = ProcessResult(output:nil, error:nil, exitCode:0)
 struct XcodeHelpableFixture: XcodeHelpable {
     
+    
 //    var expectations: [CliOption: [String]]?
     init(){}
 //    init(expectations:[CliOption: [String]]){
@@ -55,6 +56,12 @@ struct XcodeHelpableFixture: XcodeHelpable {
     var testGenerateXcodeProject: ((String) -> ProcessResult )?
     @discardableResult func generateXcodeProject(at sourcePath: String, shouldLog: Bool) throws -> ProcessResult {
         return (testGenerateXcodeProject?(sourcePath))!
+    }
+    
+    var testRecursiveXcodeProjects: ((String) -> [String] )?
+    @available(OSX 10.11, *)
+    func recursiveXcodeProjects(at sourcePath: String) -> [String] {
+        return (testRecursiveXcodeProjects?(sourcePath))!
     }
     
     var testCreateArchive: ((String, [String], Bool) -> ProcessResult)?

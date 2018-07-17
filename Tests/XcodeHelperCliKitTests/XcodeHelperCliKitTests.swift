@@ -244,30 +244,56 @@ class XcodeHelperCliKitTests: XCTestCase {
             XCTFail("Error: \(e)")
         }
     }
-    func testHandleUpdatePackages_symlinkDependencies() {
+    @available(OSX 10.11, *)
+    func testHandleUpdatePackages_recursiveXcodeProjects() {
         do{
             let path = "/tmp/\(UUID().uuidString)"
             let expectations = [XCHelper.updateMacOsPackages.changeDirectory: [path],
-                                XCHelper.updateMacOsPackages.symlink: ["true"]]
+                                XCHelper.updateMacOsPackages.recursive: ["true"]]
             var fixture = XcodeHelpableFixture()
             fixture.testUpdateMacOsPackages = { (sourcePath:String) -> ProcessResult in
                 return emptyProcessResult
             }
-            var didCallSymlinkDependencies = false
-            fixture.testSymlinkDependencies = { (sourcePath:String) -> Void in
-                didCallSymlinkDependencies = true
+            var didCallRecursiveXcodeProjects = false
+            fixture.testRecursiveXcodeProjects = { (sourcePath:String) -> [String] in
+                didCallRecursiveXcodeProjects = true
                 XCTAssertEqual(sourcePath, path)
+                return []
             }
             let xchelper = XCHelper(xcodeHelpable:fixture)
             let option = xchelper.updateMacOsPackagesOption.preparedWithOptionalArg(fixtureIndex: expectations)
             
             try xchelper.handleUpdatePackages(option: option)
             
-            XCTAssertTrue(didCallSymlinkDependencies, "Failed to call symlinkDependencies on XcodeHelpable")
+            XCTAssertTrue(didCallRecursiveXcodeProjects, "Failed to call recursiveXcodeProjects on XcodeHelpable")
         }catch let e{
             XCTFail("Error: \(e)")
         }
     }
+//    func testHandleUpdatePackages_symlinkDependencies() {
+//        do{
+//            let path = "/tmp/\(UUID().uuidString)"
+//            let expectations = [XCHelper.updateMacOsPackages.changeDirectory: [path],
+//                                XCHelper.updateMacOsPackages.symlink: ["true"]]
+//            var fixture = XcodeHelpableFixture()
+//            fixture.testUpdateMacOsPackages = { (sourcePath:String) -> ProcessResult in
+//                return emptyProcessResult
+//            }
+//            var didCallSymlinkDependencies = false
+//            fixture.testSymlinkDependencies = { (sourcePath:String) -> Void in
+//                didCallSymlinkDependencies = true
+//                XCTAssertEqual(sourcePath, path)
+//            }
+//            let xchelper = XCHelper(xcodeHelpable:fixture)
+//            let option = xchelper.updateMacOsPackagesOption.preparedWithOptionalArg(fixtureIndex: expectations)
+//
+//            try xchelper.handleUpdatePackages(option: option)
+//
+//            XCTAssertTrue(didCallSymlinkDependencies, "Failed to call symlinkDependencies on XcodeHelpable")
+//        }catch let e{
+//            XCTFail("Error: \(e)")
+//        }
+//    }
     
     private func buildConfigurationTest(buildConfiguration: BuildConfiguration){
         do{

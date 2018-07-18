@@ -163,7 +163,8 @@ public struct XCHelper : CliRunnable {
         var errors = [String]()
         for path in sourcePaths {
             do {
-                let result = try xcodeHelpable.updateMacOsPackages(at: path, shouldLog: true)
+                let result = try xcodeHelpable.updateMacOsPackages(at: path.replacingOccurrences(of: "Package.swift", with: ""),
+                                                                   shouldLog: true)
                 outputs.append(result.output ?? "")
             } catch let error {
                 let errorMessage = String(describing: error)

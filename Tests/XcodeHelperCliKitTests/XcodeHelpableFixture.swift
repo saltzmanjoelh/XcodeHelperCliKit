@@ -58,10 +58,10 @@ struct XcodeHelpableFixture: XcodeHelpable {
         return (testGenerateXcodeProject?(sourcePath))!
     }
     
-    var testRecursiveXcodeProjects: ((String) -> [String] )?
+    var testRecursivePackagePaths: ((String) -> [String] )?
     @available(OSX 10.11, *)
-    func recursiveXcodeProjects(at sourcePath: String) -> [String] {
-        return (testRecursiveXcodeProjects?(sourcePath))!
+    func recursivePackagePaths(at sourcePath: String) -> [String] {
+        return (testRecursivePackagePaths?(sourcePath))!
     }
     
     var testCreateArchive: ((String, [String], Bool) -> ProcessResult)?

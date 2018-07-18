@@ -19,6 +19,7 @@ class XcodeHelperCliKitTests: XCTestCase {
     
     let executableRepoURL = "https://github.com/saltzmanjoelh/HelloSwift" //we use a different repo for testing because this repo isn't meant for linux
     let libraryRepoURL = "https://github.com/saltzmanjoelh/Hello"
+    let dependenciesURL = "https://github.com/saltzmanjoelh/HelloDependencies.git"
     var sourcePath : String?
     
     override func setUp() {
@@ -37,10 +38,11 @@ class XcodeHelperCliKitTests: XCTestCase {
     //returns the temp dir that we cloned into
     private func cloneToTempDirectory(repoURL:String) -> String? {
         //use /tmp instead of FileManager.default.temporaryDirectory because Docker for mac specifies /tmp by default and not /var...
-        guard let tempDir = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).path.appending("/XcodeHelperCliTests/\(UUID())") else{
-            XCTFail("Failed to get user dir")
-            return nil
-        }
+//        guard let tempDir = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).path.appending("/XcodeHelperCliTests/\(UUID())") else{
+//            XCTFail("Failed to get user dir")
+//            return nil
+//        }
+        let tempDir = "/tmp/\(UUID())"
         if !FileManager.default.fileExists(atPath: tempDir) {
             do {
                 try FileManager.default.createDirectory(atPath: tempDir, withIntermediateDirectories: false, attributes: nil)
@@ -255,7 +257,7 @@ class XcodeHelperCliKitTests: XCTestCase {
                 return emptyProcessResult
             }
             var didCallRecursiveXcodeProjects = false
-            fixture.testRecursiveXcodeProjects = { (sourcePath:String) -> [String] in
+            fixture.testRecursivePackagePaths = { (sourcePath:String) -> [String] in
                 didCallRecursiveXcodeProjects = true
                 XCTAssertEqual(sourcePath, path)
                 return []
@@ -266,6 +268,23 @@ class XcodeHelperCliKitTests: XCTestCase {
             try xchelper.handleUpdatePackages(option: option)
             
             XCTAssertTrue(didCallRecursiveXcodeProjects, "Failed to call recursiveXcodeProjects on XcodeHelpable")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    func testUpdateRecursiveProjects() {
+        do{
+            let sourcePath = cloneToTempDirectory(repoURL: dependenciesURL)!
+            let xchelper = XCHelper()
+            let fixtures = [XCHelper.updateMacOsPackages.changeDirectory: [sourcePath],
+                            XCHelper.updateMacOsPackages.recursive: ["true"]]
+            let option =  xchelper.updateMacOsPackagesOption.preparedWithOptionalArg(fixtureIndex: fixtures)
+            
+            let result = try xchelper.handleUpdatePackages(option: option)
+            
+            XCTAssertNotNil(result.output)
+            XCTAssertNil(result.error)
+            XCTAssertEqual(result.exitCode, 0)
         }catch let e{
             XCTFail("Error: \(e)")
         }

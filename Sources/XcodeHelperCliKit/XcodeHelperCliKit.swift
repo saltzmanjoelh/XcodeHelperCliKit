@@ -154,19 +154,23 @@ public struct XCHelper : CliRunnable {
         var sourcePaths = [sourcePath]
         if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.recursive.keys.first!) == true {
             if #available(OSX 10.11, *) {
-                sourcePaths = xcodeHelpable.recursiveXcodeProjects(at: sourcePath)
+                sourcePaths = xcodeHelpable.recursivePackagePaths(at: sourcePath)
             } else {
                 print("--recursive is only available on 10.11 or higher")
             }
         }
-        var output = [String]()
+        var outputs = [String]()
         var errors = [String]()
-        for sourcePath in sourcePaths {
+        for path in sourcePaths {
             do {
-                let result = try xcodeHelpable.updateMacOsPackages(at: sourcePath, shouldLog: true)
-                output.append(result.output ?? "")
+                let result = try xcodeHelpable.updateMacOsPackages(at: path, shouldLog: true)
+                outputs.append(result.output ?? "")
             } catch let error {
-                errors.append(String(describing: error))
+                let errorMessage = String(describing: error)
+                if path == sourcePath && errorMessage.contains("root manifest") && sourcePaths.count > 1 {
+                    continue //It's possible that the root path isn't managed by SPM but the subproject is. Don't log it
+                }
+                errors.append(errorMessage)
             }
         }
         
@@ -179,8 +183,9 @@ public struct XCHelper : CliRunnable {
 //            try xcodeHelpable.symlinkDependencies(at: sourcePath, shouldLog: true)
 //        }
         
+        let output = outputs.joined(separator: "\n")
         let errorString = errors.joined(separator: "\n")
-        let updateResult = ProcessResult(output: output.joined(separator: "\n"),
+        let updateResult = ProcessResult(output: output.trimmingCharacters(in: .whitespacesAndNewlines).count > 1 ? output : nil,
                                          error: errorString.trimmingCharacters(in: .whitespacesAndNewlines).count > 1 ? errorString : nil,
                                          exitCode: errorString.trimmingCharacters(in: .whitespacesAndNewlines).count > 1 ? EXIT_FAILURE : 0)
         

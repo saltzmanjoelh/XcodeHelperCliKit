@@ -160,12 +160,14 @@ public struct XCHelper : CliRunnable {
             }
         }
         var output = [String]()
+        var errors = [String]()
         for sourcePath in sourcePaths {
-            let result = try xcodeHelpable.updateMacOsPackages(at: sourcePath, shouldLog: true)
-            guard result.error == nil else {
-                return result
+            do {
+                let result = try xcodeHelpable.updateMacOsPackages(at: sourcePath, shouldLog: true)
+                output.append(result.output ?? "")
+            } catch let error {
+                errors.append(String(describing: error))
             }
-            output.append(result.output ?? "")
         }
         
 //        When I populate the argumentIndex i'm not populating with all keys
@@ -177,9 +179,10 @@ public struct XCHelper : CliRunnable {
 //            try xcodeHelpable.symlinkDependencies(at: sourcePath, shouldLog: true)
 //        }
         
+        let errorString = errors.joined(separator: "\n")
         let updateResult = ProcessResult(output: output.joined(separator: "\n"),
-                                         error: nil,
-                                         exitCode: 0)
+                                         error: errorString.trimmingCharacters(in: .whitespacesAndNewlines).count > 1 ? errorString : nil,
+                                         exitCode: errorString.trimmingCharacters(in: .whitespacesAndNewlines).count > 1 ? EXIT_FAILURE : 0)
         
         return updateResult
     }

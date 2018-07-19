@@ -281,6 +281,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             let option =  xchelper.updateMacOsPackagesOption.preparedWithOptionalArg(fixtureIndex: fixtures)
             
             let result = try xchelper.handleUpdatePackages(option: option)
+            print("output: \(result.output), error: \(result.error)")
             
             XCTAssertNotNil(result.output)
             XCTAssertNil(result.error)

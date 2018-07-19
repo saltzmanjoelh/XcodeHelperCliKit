@@ -118,28 +118,28 @@ public struct XCHelper : CliRunnable {
         static let command          = CliOption(keys: [Command.updateMacOSPackages.cliName, Command.updateMacOSPackages.envName],
                                                 description: Command.updateMacOSPackages.description,
                                                 usage: "xchelper \(Command.updateMacOSPackages.cliName) [OPTIONS]",
-                                                requiresValue: false,
-                                                defaultValue:nil)
+            requiresValue: false,
+            defaultValue:nil)
         static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "UPDATE_MACOS_PACKAGES_\(changeDirectoryOption.envSuffix)"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
                                                 requiresValue:true,
                                                 defaultValue:nil)
         static let generateXcodeProject  = CliOption(keys:["-g", "--generate", "UPDATE_PACKAGES_GENERATE_XCPROJECT"],
-                                                description:"Generate a new Xcode project",
-                                                usage: nil,
-                                                requiresValue:false,
-                                                defaultValue: nil)
+                                                     description:"Generate a new Xcode project",
+                                                     usage: nil,
+                                                     requiresValue:false,
+                                                     defaultValue: nil)
         static let recursive          = CliOption(keys:["-r", "--recursive", "UPDATE_PACKAGES_RECURSIVE"],
-                                                description:"Recursively search subdirectories for .xcodeprojs that need their dependencies updated. If you have a main application project which is not managed by SPM, you can create a subdirectory which is an SPM managed project. Then, use this to update those dependencies from the main project.",
-                                                usage: nil,
-                                                requiresValue:false,
-                                                defaultValue: nil)
-//        static let symlink          = CliOption(keys:["-s", "--symlink", "UPDATE_PACKAGES_SYMLINK"],
-//                                                description:"Create symbolic links for the dependency 'Packages' after `swift package update` so you don't have to generate a new xcode project.",
-//                                                usage: nil,
-//                                                requiresValue:false,
-//                                                defaultValue: nil)
+                                                  description:"Recursively search subdirectories for .xcodeprojs that need their dependencies updated. If you have a main application project which is not managed by SPM, you can create a subdirectory which is an SPM managed project. Then, use this to update those dependencies from the main project.",
+                                                  usage: nil,
+                                                  requiresValue:false,
+                                                  defaultValue: nil)
+        //        static let symlink          = CliOption(keys:["-s", "--symlink", "UPDATE_PACKAGES_SYMLINK"],
+        //                                                description:"Create symbolic links for the dependency 'Packages' after `swift package update` so you don't have to generate a new xcode project.",
+        //                                                usage: nil,
+        //                                                requiresValue:false,
+        //                                                defaultValue: nil)
     }
     public var updateMacOsPackagesOption: CliOption {
         var updateMacOsPackagesOption = updateMacOsPackages.command
@@ -149,9 +149,13 @@ public struct XCHelper : CliRunnable {
     }
     @discardableResult
     public func handleUpdatePackages(option:CliOption) throws -> ProcessResult {
+        XcodeHelper.logger = Logger(category: Command.updateMacOSPackages.title)
+        
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: updateMacOsPackages.changeDirectory.keys.first)
         var sourcePaths = [sourcePath]
+        XcodeHelper.logger?.logWithNotification("Updating %@", URL.init(fileURLWithPath: sourcePath).lastPathComponent)
+        
         if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.recursive.keys.first!) == true {
             if #available(OSX 10.11, *) {
                 sourcePaths = xcodeHelpable.recursivePackagePaths(at: sourcePath)
@@ -162,34 +166,42 @@ public struct XCHelper : CliRunnable {
         var outputs = [String]()
         var errors = [String]()
         for path in sourcePaths {
+            var url = URL.init(fileURLWithPath: path)
+            if url.lastPathComponent == "Package.swift" {
+                url = url.deletingLastPathComponent()
+            }
+            
+            XcodeHelper.logger?.logWithNotification("Updating %@" as StaticString, url.lastPathComponent)
             do {
                 let result = try xcodeHelpable.updateMacOsPackages(at: path.replacingOccurrences(of: "Package.swift", with: ""),
                                                                    shouldLog: true)
                 outputs.append(result.output ?? "")
+                //        When I populate the argumentIndex i'm not populating with all keys
+                //        from the xc exten we pass long version of arg
+                if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.generateXcodeProject.keys.first!) == true {
+                    try xcodeHelpable.generateXcodeProject(at: sourcePath, shouldLog: true)
+                }
+                //        if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.symlink.keys.first!) == true {
+                //            try xcodeHelpable.symlinkDependencies(at: sourcePath, shouldLog: true)
+                //        }
             } catch let error {
                 let errorMessage = String(describing: error)
                 if path == sourcePath && errorMessage.contains("root manifest") && sourcePaths.count > 1 {
                     continue //It's possible that the root path isn't managed by SPM but the subproject is. Don't log it
                 }
                 errors.append(errorMessage)
+                continue
             }
+            
+            XcodeHelper.logger?.logWithNotification("%@ packages updated", url.lastPathComponent)
         }
-        
-//        When I populate the argumentIndex i'm not populating with all keys
-//        from the xc exten we pass long version of arg
-        if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.generateXcodeProject.keys.first!) == true {
-            try xcodeHelpable.generateXcodeProject(at: sourcePath, shouldLog: true)
-        }
-//        if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.symlink.keys.first!) == true {
-//            try xcodeHelpable.symlinkDependencies(at: sourcePath, shouldLog: true)
-//        }
-        
+        XcodeHelper.logger?.logWithNotification("Done updating packages")
         let output = outputs.joined(separator: "\n")
         let errorString = errors.joined(separator: "\n")
         let updateResult = ProcessResult(output: output.trimmingCharacters(in: .whitespacesAndNewlines).count > 1 ? output : nil,
                                          error: errorString.trimmingCharacters(in: .whitespacesAndNewlines).count > 1 ? errorString : nil,
                                          exitCode: errorString.trimmingCharacters(in: .whitespacesAndNewlines).count > 1 ? EXIT_FAILURE : 0)
-        
+        guard updateResult.error == nil else { return updateResult }
         return updateResult
     }
     
@@ -197,8 +209,8 @@ public struct XCHelper : CliRunnable {
         static let command          = CliOption(keys: [Command.updateDockerPackages.cliName, Command.updateDockerPackages.envName],
                                                 description: Command.updateDockerPackages.description,
                                                 usage: "xchelper \(Command.updateDockerPackages.cliName) [OPTIONS]",
-                                                requiresValue: false,
-                                                defaultValue:nil)
+            requiresValue: false,
+            defaultValue:nil)
         static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "UPDATE_DOCKER_PACKAGES_\(changeDirectoryOption.envSuffix)"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
@@ -226,12 +238,17 @@ public struct XCHelper : CliRunnable {
     }
     @discardableResult
     public func handleUpdateDockerPackages(option:CliOption) throws -> ProcessResult {
+        XcodeHelper.logger = Logger(category: Command.updateDockerPackages.title)
+        
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: updateMacOsPackages.changeDirectory.keys.first)
+        XcodeHelper.logger?.logWithNotification("Updating %@", URL.init(fileURLWithPath: sourcePath).lastPathComponent)
         let imageName = argumentIndex[updateDockerPackages.imageName.keys.first!]?.first ?? updateDockerPackages.imageName.defaultValue!
         let volumeName = argumentIndex[updateDockerPackages.volumeName.keys.first!]?.first ?? updateDockerPackages.volumeName.defaultValue!
+        let result = try xcodeHelpable.updateDockerPackages(at: sourcePath, inImage: imageName, withVolume: volumeName, shouldLog: true)
         
-        return try xcodeHelpable.updateDockerPackages(at: sourcePath, inImage: imageName, withVolume: volumeName, shouldLog: true)
+        XcodeHelper.logger?.logWithNotification("Packages updated.")
+        return result
     }
     
     // MARK: DockerBuild
@@ -239,8 +256,8 @@ public struct XCHelper : CliRunnable {
         static let command              = CliOption(keys: [Command.dockerBuild.cliName, Command.dockerBuild.envName],
                                                     description: Command.dockerBuild.description,
                                                     usage: "xchelper \(Command.dockerBuild.cliName) [OPTIONS]",
-                                                    requiresValue: false,
-                                                    defaultValue: nil)
+            requiresValue: false,
+            defaultValue: nil)
         static let buildOnSuccess       = CliOption(keys: ["-s", "--after-success", "DOCKER_BUILD_AFTER_SUCCESS"],
                                                     description: "Only build after a successful macOS build. This helps reduce duplicate errors in Xcode from multiple platforms.",
                                                     usage: "-s [PATH_TO_BUILD_DIR] ie: -s /project/path/.build",
@@ -267,17 +284,17 @@ public struct XCHelper : CliRunnable {
                                                     requiresValue: true,
                                                     defaultValue: "swift")
         static let containerName  = CliOption(keys:["-n", "--container-name", "DOCKER_BUILD_CONTAINER_NAME"],
-                                           description:"The name of the container. Defaults to the same as the image name.",
-                                           usage: "-n [CONTAINER_NAME] ie: -n android",
-                                           requiresValue: true,
-                                           defaultValue: "LinuxSwiftContainer")
+                                              description:"The name of the container. Defaults to the same as the image name.",
+                                              usage: "-n [CONTAINER_NAME] ie: -n android",
+                                              requiresValue: true,
+                                              defaultValue: "LinuxSwiftContainer")
         
         //TODO: make sure all volumeName options have the same keys
         static let volumeName  = CliOption(keys:["-v", "--volume", "DOCKER_BUILD_PERSISTENT_VOLUME"],
-                                                    description:"Create a subdirectory in the .build directory. This separates the macOS build files from docker build files to make builds faster for each platform.",
-                                                    usage: "-v [PLATFORM_NAME] ie: -v android",
-                                                    requiresValue: true,
-                                                    defaultValue: "docker_volume")
+                                           description:"Create a subdirectory in the .build directory. This separates the macOS build files from docker build files to make builds faster for each platform.",
+                                           usage: "-v [PLATFORM_NAME] ie: -v android",
+                                           requiresValue: true,
+                                           defaultValue: "docker_volume")
         
     }
     public var dockerBuildOption: CliOption {
@@ -289,9 +306,12 @@ public struct XCHelper : CliRunnable {
     }
     @discardableResult
     public func handleDockerBuild(option:CliOption) throws -> ProcessResult {
+        XcodeHelper.logger = Logger(category: Command.dockerBuild.title)
+        
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: dockerBuild.changeDirectory.keys.first)
         var runOptions = [DockerRunOption]()
+        XcodeHelper.logger?.logWithNotification("Building - %@", URL.init(fileURLWithPath: sourcePath).lastPathComponent)
         
         guard let buildConfigurationString = argumentIndex[dockerBuild.buildConfiguration.keys.first!]?.first else {
             throw XcodeHelperError.dockerBuild(message: "\(dockerBuild.buildConfiguration.keys) not provided.", exitCode: 1)
@@ -301,7 +321,7 @@ public struct XCHelper : CliRunnable {
             throw XcodeHelperError.dockerBuild(message: "\(dockerBuild.imageName.keys) not provided.", exitCode: 1)
         }
         let persistentVolume = argumentIndex[dockerBuild.volumeName.keys.first!]?.first
-//        let customOptions = argumentIndex[dockerBuild.volumeName.keys.first!]
+        //        let customOptions = argumentIndex[dockerBuild.volumeName.keys.first!]
         
         if let containerName = argumentIndex[dockerBuild.containerName.keys.first!]?.first {
             runOptions.append(.container(name: containerName))
@@ -309,9 +329,9 @@ public struct XCHelper : CliRunnable {
         if argumentIndex.yamlBoolValue(forKey: dockerBuild.removeWhenDone.keys.first!) == true {
             runOptions.append(.removeWhenDone)
         }
-//        if let options = customOptions {
-//            options.forEach({ runOptions.append(.custom(option: $0)) })
-//        }
+        //        if let options = customOptions {
+        //            options.forEach({ runOptions.append(.custom(option: $0)) })
+        //        }
         
         if let buildDirectory = argumentIndex[dockerBuild.buildOnSuccess.keys.first!]?.first {
             if let buildURL = xcodeBuildLogDirectory(from: buildDirectory), try !lastBuildWasSuccess(at: buildURL) {
@@ -319,7 +339,9 @@ public struct XCHelper : CliRunnable {
             }
         }
         
-        return try xcodeHelpable.dockerBuild(sourcePath, with: runOptions, using: buildConfiguration, in: imageName, persistentVolumeName: persistentVolume, shouldLog: true)
+        let result = try xcodeHelpable.dockerBuild(sourcePath, with: runOptions, using: buildConfiguration, in: imageName, persistentVolumeName: persistentVolume, shouldLog: true)
+        XcodeHelper.logger?.logWithNotification("Done building in docker")
+        return result
     }
     //we have the func here instead of XcodeHelperKit because it requires use of ProcessInfo which is more likely to be available here
     //check BUILD_DIR/../../Logs/Build `ls -t` first item, it's gziped archive, last word in file is success or failed
@@ -362,29 +384,29 @@ public struct XCHelper : CliRunnable {
     
     
     // MARK: Clean
-//    struct clean {
-//        static let command              = CliOption(keys: [Command.clean.rawValue, "CLEAN"],
-//                                                    description: "Run swift package --clean on your package.",
-//                                                    usage: "xchelper clean [OPTIONS]",
-//                                                    requiresValue: false,
-//                                                    defaultValue:nil)
-//        static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short, changeDirectoryOption.long.rawValue, "CLEAN_\(changeDirectoryOption.envSuffix)"],
-//                                                description:"Change the current working directory.",
-//                                                usage:nil,
-//                                                requiresValue:true,
-//                                                defaultValue:nil)
-//    }
-//    public var cleanOption: CliOption {
-//        var cleanOption = clean.command
-//        cleanOption.optionalArguments = [clean.changeDirectory]
-//        cleanOption.action = handleClean
-//        return cleanOption
-//    }
-//    public func handleClean(option:CliOption) throws {
-//        let argumentIndex = option.argumentIndex
-//        let sourcePath = parseSourceCodePath(from: argumentIndex, with: clean.changeDirectory.keys.first)
-//        try xcodeHelpable.clean(sourcePath: sourcePath, shouldLog: true)
-//    }
+    //    struct clean {
+    //        static let command              = CliOption(keys: [Command.clean.rawValue, "CLEAN"],
+    //                                                    description: "Run swift package --clean on your package.",
+    //                                                    usage: "xchelper clean [OPTIONS]",
+    //                                                    requiresValue: false,
+    //                                                    defaultValue:nil)
+    //        static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short, changeDirectoryOption.long.rawValue, "CLEAN_\(changeDirectoryOption.envSuffix)"],
+    //                                                description:"Change the current working directory.",
+    //                                                usage:nil,
+    //                                                requiresValue:true,
+    //                                                defaultValue:nil)
+    //    }
+    //    public var cleanOption: CliOption {
+    //        var cleanOption = clean.command
+    //        cleanOption.optionalArguments = [clean.changeDirectory]
+    //        cleanOption.action = handleClean
+    //        return cleanOption
+    //    }
+    //    public func handleClean(option:CliOption) throws {
+    //        let argumentIndex = option.argumentIndex
+    //        let sourcePath = parseSourceCodePath(from: argumentIndex, with: clean.changeDirectory.keys.first)
+    //        try xcodeHelpable.clean(sourcePath: sourcePath, shouldLog: true)
+    //    }
     
     
     // MARK: SymlinkDependencies
@@ -392,8 +414,8 @@ public struct XCHelper : CliRunnable {
         static let command              = CliOption(keys: [Command.symlinkDependencies.cliName, Command.symlinkDependencies.envName],
                                                     description: Command.symlinkDependencies.description,
                                                     usage: "xchelper \(Command.symlinkDependencies.cliName) [OPTIONS]",
-                                                    requiresValue: false,
-                                                    defaultValue:nil)
+            requiresValue: false,
+            defaultValue:nil)
         static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "SYMLINK_DEPENDENCIES_\(changeDirectoryOption.envSuffix)"],
                                                 description:"Change the current working directory.",
                                                 usage:nil,
@@ -418,8 +440,8 @@ public struct XCHelper : CliRunnable {
         static let command              = CliOption(keys: [Command.createArchive.cliName, Command.createArchive.envName],
                                                     description:Command.createArchive.description ,
                                                     usage: "xchelper \(Command.createArchive.cliName) ARCHIVE_PATH FILES [OPTIONS]. ARCHIVE_PATH the full path and filename for the archive to be created. FILES is a space separated list of full paths to the files you want to archive.",
-                                                    requiresValue: false,
-                                                    defaultValue: nil)
+            requiresValue: false,
+            defaultValue: nil)
         static let flatList   = CliOption(keys:["-f", "--flat-list", "CREATE_ARCHIVE_FLAT_LIST"],
                                           description:"Put all the files in a flat list instead of maintaining directory structure",
                                           usage: nil,
@@ -434,6 +456,8 @@ public struct XCHelper : CliRunnable {
     }
     @discardableResult
     public func handleCreateArchive(option:CliOption) throws -> ProcessResult {
+        XcodeHelper.logger = Logger(category: Command.createArchive.title)
+        XcodeHelper.logger?.logWithNotification("Creating archive")
         let argumentIndex = option.argumentIndex
         guard let paths = argumentIndex[createArchive.command.keys.first!] else {
             throw XcodeHelperError.createArchive(message: "You didn't provide any paths.")
@@ -450,7 +474,10 @@ public struct XCHelper : CliRunnable {
         }
         
         let filePaths = Array(paths[1..<paths.count])
-        return try xcodeHelpable.createArchive(at: archivePath, with: filePaths, flatList: flatList, shouldLog: true)
+        let result = try xcodeHelpable.createArchive(at: archivePath, with: filePaths, flatList: flatList, shouldLog: true)
+        
+        XcodeHelper.logger?.logWithNotification("Archive created")
+        return result
     }
     
     
@@ -459,8 +486,8 @@ public struct XCHelper : CliRunnable {
         static let command              = CliOption(keys: [Command.uploadArchive.cliName, Command.uploadArchive.envName],
                                                     description: Command.uploadArchive.description,
                                                     usage: "xchelper \(Command.uploadArchive.cliName) ARCHIVE_PATH [OPTIONS]. ARCHIVE_PATH the path of the archive that you want to upload to S3.",
-                                                    requiresValue: true,
-                                                    defaultValue:nil)
+            requiresValue: true,
+            defaultValue:nil)
         static let bucket               = CliOption(keys:["-b", "--bucket", "UPLOAD_ARCHIVE_S3_BUCKET"],
                                                     description:"The bucket that you want to upload your archive to.",
                                                     usage: nil,
@@ -495,6 +522,9 @@ public struct XCHelper : CliRunnable {
         return uploadArchveOption
     }
     public func handleUploadArchive(option:CliOption) throws {
+        XcodeHelper.logger = Logger(category: Command.uploadArchive.title)
+        XcodeHelper.logger?.logWithNotification("Uploading archve")
+        
         let argumentIndex = option.argumentIndex
         guard let archivePath = argumentIndex[uploadArchive.command.keys.first!]?.first else {
             throw XcodeHelperError.uploadArchive(message: "You didn't provide the path to the archive that you want to upload.")
@@ -513,11 +543,12 @@ public struct XCHelper : CliRunnable {
             try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, key: key, secret: secret, shouldLog: true)
             
         } else if let file = argumentIndex[uploadArchive.credentialsFile.keys.first!]?.first {
-                try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, using: file, shouldLog: true)
+            try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, using: file, shouldLog: true)
             
         } else {
             throw XcodeHelperError.uploadArchive(message: "You must provide either a credentials file or a key and secret")
         }
+        XcodeHelper.logger?.logWithNotification("Archive uploaded")
     }
     
     
@@ -526,8 +557,8 @@ public struct XCHelper : CliRunnable {
         static let command              = CliOption(keys: [Command.gitTag.cliName, Command.gitTag.envName],
                                                     description: Command.gitTag.description,
                                                     usage: "xchelper \(Command.gitTag.cliName) [OPTIONS]",
-                                                    requiresValue: false,
-                                                    defaultValue: nil)
+            requiresValue: false,
+            defaultValue: nil)
         static let changeDirectory      = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "GIT_TAG_\(changeDirectoryOption.envSuffix)"],
                                                     description:"Change the current working directory.",
                                                     usage:nil,
@@ -557,18 +588,20 @@ public struct XCHelper : CliRunnable {
     }
     @discardableResult
     public func handleGitTag(option:CliOption) throws -> ProcessResult {
+        XcodeHelper.logger = Logger(category: Command.gitTag.title)
         let argumentIndex = option.argumentIndex
         let sourcePath = parseSourceCodePath(from: argumentIndex, with: gitTag.changeDirectory.keys.first!)
+        XcodeHelper.logger?.logWithNotification("Updating %@", URL.init(fileURLWithPath: sourcePath).lastPathComponent)
         var outputString: String?
         var processResult: ProcessResult?
         do {
             var versionString: String?
-
+            
             //update from user input
             if let version = argumentIndex[gitTag.versionOption.keys.first!]?.first {
                 processResult = try xcodeHelpable.gitTag(version, repo: sourcePath, shouldLog: true)
                 versionString = version
-             
+                
             }else if let componentString = argumentIndex[gitTag.incrementOption.keys.first!]?.first,
                 let component = GitTagComponent.init(stringValue: componentString) {
                 versionString = try xcodeHelpable.incrementGitTag(component: component, at: sourcePath, shouldLog: true)
@@ -583,14 +616,14 @@ public struct XCHelper : CliRunnable {
                 }
                 versionString = try xcodeHelpable.incrementGitTag(component: component, at: sourcePath, shouldLog: true)
             }
-
+            
             if let tag = versionString {
                 outputString = tag
                 if argumentIndex.yamlBoolValue(forKey: gitTag.pushOption.keys.first!) == true {
                     try xcodeHelpable.pushGitTag(tag: tag, at: sourcePath, shouldLog: true)
                 }
             }
-
+            
         } catch XcodeHelperError.gitTag(_) {
             //no current tag, just start it at 0.0.1
             outputString = "0.0.1"
@@ -600,7 +633,9 @@ public struct XCHelper : CliRunnable {
         //if let str = outputString {
         //    print(str)
         //}
-        return processResult ?? ProcessResult(output: nil, error: "Failed to execute", exitCode: EXIT_FAILURE)
+        let result = processResult ?? ProcessResult(output: nil, error: "Failed to execute", exitCode: EXIT_FAILURE)
+        XcodeHelper.logger?.logWithNotification("Done updating Git Tag")
+        return result
     }
     
     
@@ -610,13 +645,13 @@ public struct XCHelper : CliRunnable {
         static let command              = CliOption(keys: [Command.createXcarchive.cliName, Command.createXcarchive.envName],
                                                     description: Command.createXcarchive.description,
                                                     usage: "xchelper \(Command.createXcarchive.cliName) XCARCHIVE_PATH [OPTIONS]. XCARCHIVE_PATH is the directory (.xcarchive) where you want the Info.plist created in. ",
-                                                    requiresValue: true,
-                                                    defaultValue: nil)
-//        static let nameOption          = CliOption(keys: ["-n", "--name", "CREATE_PLIST_APP_NAME"],
-//                                                   description: "The app name to include in the `Name` field of the Info.plist.",
-//                                                   usage: nil,
-//                                                   requiresValue: true,
-//                                                   defaultValue: nil)
+            requiresValue: true,
+            defaultValue: nil)
+        //        static let nameOption          = CliOption(keys: ["-n", "--name", "CREATE_PLIST_APP_NAME"],
+        //                                                   description: "The app name to include in the `Name` field of the Info.plist.",
+        //                                                   usage: nil,
+        //                                                   requiresValue: true,
+        //                                                   defaultValue: nil)
         static let schemeOption          = CliOption(keys: ["-s", "--scheme", "CREATE_PLIST_SCHEME"],
                                                      description: "The scheme name to include in the `Scheme` field of the Info.plist.",
                                                      usage: nil,
@@ -631,6 +666,8 @@ public struct XCHelper : CliRunnable {
     }
     //returns the path to the new xcarchive
     public func handleCreateXcarchive(option:CliOption) throws -> ProcessResult {
+        XcodeHelper.logger = Logger(category: Command.createXcarchive.title)
+        XcodeHelper.logger?.logWithNotification("Creating XCAchrive")
         let argumentIndex = option.argumentIndex
         guard var paths = argumentIndex[createXcarchive.command.keys.first!] else {
             throw XcodeHelperError.createXcarchive(message: "You didn't provide any paths.")
@@ -641,15 +678,17 @@ public struct XCHelper : CliRunnable {
         guard paths.count > 1 else {
             throw XcodeHelperError.createXcarchive(message: "You didn't provide the path to the binary which you want to archive.")
         }
-//        guard let name = argumentIndex[createXcarchive.nameOption.keys.first!]?.first else {
-//            throw XcodeHelperError.createXcarchive(message: "You didn't provide the name to include in the plist.")
-//        }
+        //        guard let name = argumentIndex[createXcarchive.nameOption.keys.first!]?.first else {
+        //            throw XcodeHelperError.createXcarchive(message: "You didn't provide the name to include in the plist.")
+        //        }
         guard let scheme = argumentIndex[createXcarchive.schemeOption.keys.first!]?.first else {
             throw XcodeHelperError.createXcarchive(message: "You didn't provide the scheme to include in the plist.")
         }
         paths.removeFirst()
-        return try xcodeHelpable.createXcarchive(in: archivePath, with: paths.first!, from: scheme, shouldLog: true)
+        let result = try xcodeHelpable.createXcarchive(in: archivePath, with: paths.first!, from: scheme, shouldLog: true)
         //print(outputString)
+        XcodeHelper.logger?.logWithNotification("Updating creating XCArchive")
+        return result
     }
     
 }

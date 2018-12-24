@@ -10,18 +10,34 @@ import XCTest
 import ProcessRunner
 import CliRunnable
 import DockerProcess
+import xcodeproj
 import XcodeHelperKit
 @testable import XcodeHelperCliKit
 
 let emptyProcessResult = ProcessResult(output:nil, error:nil, exitCode:0)
 struct XcodeHelpableFixture: XcodeHelpable {
-    
-    
+
 //    var expectations: [CliOption: [String]]?
     init(){}
 //    init(expectations:[CliOption: [String]]){
 //        self.expectations = expectations
 //    }
+    
+    var testXcodeProjectPath: ((String) throws -> String)?
+    func xcodeProjectPath(inSourcePath sourcePath: String) throws -> String {
+        return (try testXcodeProjectPath?(sourcePath))!
+    }
+    
+    var testProjectBuilderPath: ((String) throws -> String)?
+    func projectBuilderPath(inSourcePath sourcePath: String) throws -> String {
+        return (try testProjectBuilderPath?(sourcePath))!
+    }
+    
+    var testPackageTargets: ((String) throws -> [String])?
+    func packageTargets(inProject xcprojPath: String) throws -> [String] {
+        return (try testPackageTargets?(xcprojPath))!
+    }
+    
     
     var testUpdateMacOsPackages: ((String) -> ProcessResult)?
     @discardableResult
@@ -40,6 +56,16 @@ struct XcodeHelpableFixture: XcodeHelpable {
     @discardableResult  func dockerBuild(_ sourcePath: String, with runOptions: [DockerRunOption]?, using configuration: BuildConfiguration, in dockerImageName: String, persistentVolumeName persistentBuildDirectory: String?, shouldLog: Bool) throws -> ProcessResult {
         return (testDockerBuild?(sourcePath, runOptions, configuration, dockerImageName, persistentBuildDirectory))!
     }
+    var testAddDockerBuildPhase: ((String, String) throws -> ProcessResult)?
+    func addDockerBuildPhase(toTarget target: String, inProject xcprojPath: String) throws -> ProcessResult {
+        return (try testAddDockerBuildPhase?(target, xcprojPath))!
+    }
+    
+    var testAddBuildPhases: (([String : [PBXShellScriptBuildPhase]], String) -> Void)?
+    func addBuildPhases(_ buildPhases: [String : [PBXShellScriptBuildPhase]], toProject xcprojPath: String) throws {
+        testAddBuildPhases?(buildPhases, xcprojPath)
+    }
+    
     
     var testClean: ((String) -> ProcessResult)?
     @discardableResult func clean(sourcePath: String, shouldLog: Bool) throws -> ProcessResult

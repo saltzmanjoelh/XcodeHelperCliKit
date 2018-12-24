@@ -206,7 +206,7 @@ class XcodeHelperCliKitTests: XCTestCase {
             var didCallUpdatePackages = false
             let expectations = [XCHelper.updateMacOsPackages.changeDirectory: [path]]
             var fixture = XcodeHelpableFixture()
-            fixture.testUpdateMacOsPackages = { (sourcePath:String) -> ProcessResult in
+            fixture.testUpdateMacOsPackages = { (sourcePath: String) -> ProcessResult in
                 didCallUpdatePackages = true
                 XCTAssertEqual(sourcePath, expectations[XCHelper.updateMacOsPackages.changeDirectory]?.first)
                 return emptyProcessResult
@@ -268,6 +268,34 @@ class XcodeHelperCliKitTests: XCTestCase {
             try xchelper.handleUpdatePackages(option: option)
             
             XCTAssertTrue(didCallRecursiveXcodeProjects, "Failed to call recursiveXcodeProjects on XcodeHelpable")
+        }catch let e{
+            XCTFail("Error: \(e)")
+        }
+    }
+    @available(OSX 10.11, *)
+    func testHandleUpdatePackages_dockerBuildPhase() {
+        do{
+            let path = "/tmp/\(UUID().uuidString)"
+            let expectations = [XCHelper.updateMacOsPackages.changeDirectory: [path],
+                                XCHelper.updateMacOsPackages.dockerBuildPhase: ["true"]]
+            var fixture = XcodeHelpableFixture()
+            fixture.testUpdateMacOsPackages = { (sourcePath:String) -> ProcessResult in
+                return emptyProcessResult
+            }
+            fixture.testPackageTargets = { (sourcePath: String) -> [String] in
+                return [UUID().uuidString]
+            }
+            var didAddDockerBuildPhase = false
+            fixture.testAddDockerBuildPhase = { (target: String, sourcePath: String) -> ProcessResult in
+                didAddDockerBuildPhase = true
+                return emptyProcessResult
+            }
+            let xchelper = XCHelper(xcodeHelpable:fixture)
+            let option = xchelper.updateMacOsPackagesOption.preparedWithOptionalArg(fixtureIndex: expectations)
+            
+            try xchelper.handleUpdatePackages(option: option)
+            
+            XCTAssertTrue(didAddDockerBuildPhase, "Failed to call add docker build phase")
         }catch let e{
             XCTFail("Error: \(e)")
         }
@@ -488,7 +516,7 @@ class XcodeHelperCliKitTests: XCTestCase {
         do{
             let result = try xchelper.decode(xcactivityLog: URL.init(fileURLWithPath: log.path))
             
-            XCTAssertTrue(result!.contains("succeeded")) //it should contain "succeeded" in order for this test to run
+            XCTAssertTrue(result!.contains("Build succeeded")) //it should contain "Build succeeded" in order for this test to run
         }catch let e{
             XCTFail("Error: \(e)")
         }
@@ -524,7 +552,7 @@ class XcodeHelperCliKitTests: XCTestCase {
                 XCTAssertEqual(inDockerImage, expectations[XCHelper.dockerBuild.imageName]?.first!)
                 return emptyProcessResult
             }
-            let xchelper = XCHelper(xcodeHelpable:fixture)
+            let xchelper = XCHelper(xcodeHelpable: fixture)
             let option = xchelper.dockerBuildOption.preparedWithOptionalArg(fixtureIndex: expectations)
             
             try xchelper.handleDockerBuild(option: option)

@@ -136,16 +136,16 @@ public struct XCHelper : CliRunnable {
                                                   usage: nil,
                                                   requiresValue:false,
                                                   defaultValue: nil)
-//        static let gitPull          = CliOption(keys:["-p", "--git-pull", "UPDATE_PACKAGES_GIT_PULL"],
-//                                                description:"Pull the latest",
-//                                                usage: nil,
-//                                                requiresValue:false,
-//                                                defaultValue: nil)
+        //        static let gitPull          = CliOption(keys:["-p", "--git-pull", "UPDATE_PACKAGES_GIT_PULL"],
+        //                                                description:"Pull the latest",
+        //                                                usage: nil,
+        //                                                requiresValue:false,
+        //                                                defaultValue: nil)
         static let dockerBuildPhase          = CliOption(keys:["-b", "--docker-build-phase", "UPDATE_PACKAGES_DOCKER_BUILD_PHASE"],
-                                                    description:"Add a `docker-build` \"Run Script Phase\" to Xcode. `docker-build` will use the .xcodehelper config file to determine the docker configuration. Run `xchelper docker-build --help` for more details on which options you can include in your .xcodehelper file. ",
-                                                  usage: nil,
-                                                  requiresValue:false,
-                                                  defaultValue: nil)
+                                                         description:"Add a `docker-build` \"Run Script Phase\" to Xcode. `docker-build` will use the .xcodehelper config file to determine the docker configuration. Run `xchelper docker-build --help` for more details on which options you can include in your .xcodehelper file. ",
+                                                         usage: nil,
+                                                         requiresValue:false,
+                                                         defaultValue: nil)
         //        static let symlink          = CliOption(keys:["-s", "--symlink", "UPDATE_PACKAGES_SYMLINK"],
         //                                                description:"Create symbolic links for the dependency 'Packages' after `swift package update` so you don't have to generate a new xcode project.",
         //                                                usage: nil,
@@ -181,36 +181,40 @@ public struct XCHelper : CliRunnable {
             if url.lastPathComponent == "Package.swift" {
                 url = url.deletingLastPathComponent()
             }
+            let theSourcePath = path.replacingOccurrences(of: "Package.swift", with: "")
             
             XcodeHelper.logger?.logWithNotification("Updating %@" as StaticString, url.lastPathComponent)
             do {
-                let result = try xcodeHelpable.updateMacOsPackages(at: path.replacingOccurrences(of: "Package.swift", with: ""),
-                                                                   shouldLog: true)
+                let result = try xcodeHelpable.updateMacOsPackages(at: theSourcePath, shouldLog: true)
                 outputs.append(result.output ?? "")
                 //        When I populate the argumentIndex i'm not populating with all keys
                 //        from the xc exten we pass long version of arg
                 if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.generateXcodeProject.keys.first!) == true {
-                    try xcodeHelpable.generateXcodeProject(at: sourcePath, shouldLog: true)
+                    try xcodeHelpable.generateXcodeProject(at: theSourcePath, shouldLog: true)
                 }
                 //        if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.symlink.keys.first!) == true {
                 //            try xcodeHelpable.symlinkDependencies(at: sourcePath, shouldLog: true)
                 //        }
             } catch let error {
                 let errorMessage = String(describing: error)
-                if path == sourcePath && errorMessage.contains("root manifest") && sourcePaths.count > 1 {
+                if theSourcePath == sourcePath && errorMessage.contains("root manifest") && sourcePaths.count > 1 {
                     continue //It's possible that the root path isn't managed by SPM but the subproject is. Don't log it
                 }
                 errors.append(errorMessage)
                 continue
             }
             XcodeHelper.logger?.logWithNotification("%@ packages updated", url.lastPathComponent)
-        }
-        if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.dockerBuildPhase.keys.first!) == true {
-            let targetNames = try xcodeHelpable.packageTargets(inProject: sourcePath)
-            for targetName in targetNames {
-                try xcodeHelpable.addDockerBuildPhase(toTarget: targetName, inProject: sourcePath)
+            
+            XcodeHelper.logger?.logWithNotification("Adding docker-build phase to %@", url.lastPathComponent)
+            if argumentIndex.yamlBoolValue(forKey: updateMacOsPackages.dockerBuildPhase.keys.first!) == true {
+                let targetNames = try xcodeHelpable.packageTargets(inProject: theSourcePath)
+                for targetName in targetNames {
+                    try xcodeHelpable.addDockerBuildPhase(toTarget: targetName, inProject: theSourcePath)
+                }
             }
+            XcodeHelper.logger?.logWithNotification("Done with docker-build")
         }
+        
         XcodeHelper.logger?.logWithNotification("Done updating packages")
         let output = outputs.joined(separator: "\n")
         let errorString = errors.joined(separator: "\n")

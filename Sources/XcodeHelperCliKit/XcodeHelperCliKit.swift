@@ -31,18 +31,23 @@ public struct XCHelper : CliRunnable {
         self.xcodeHelpable = xcodeHelpable
     }
     
-    public var appName: String {
+    public static var appName: String {
         get {
             return "xchelper"
         }
     }
+    public var appName: String {
+        get {
+            return XCHelper.appName
+        }
+    }
     public var description: String? {
         get {
-            return "xchelper keeps you in Xcode and off the command line. You can build and run tests on other platforms through Docker, fetch Swift packages, keep your dependencies in Xcode referencing the correct paths and updates and tar and upload your binary to AWS S3 buckets."
+            return "\(XCHelper.appName) keeps you in Xcode and off the command line. You can build and run tests on other platforms through Docker, update Swift packages, and tar then upload your binary to AWS S3 buckets."
         }
     }
     public var appUsage: String? {
-        return "xchelper COMMAND [OPTIONS]"
+        return "\(XCHelper.appName) COMMAND [OPTIONS]"
     }
     public enum changeDirectoryOption: String {
         case short = "-d"
@@ -118,7 +123,7 @@ public struct XCHelper : CliRunnable {
     struct updateMacOsPackages {
         static let command          = CliOption(keys: [Command.updateMacOSPackages.cliName, Command.updateMacOSPackages.envName],
                                                 description: Command.updateMacOSPackages.description,
-                                                usage: "xchelper \(Command.updateMacOSPackages.cliName) [OPTIONS]",
+                                                usage: "\(XCHelper.appName) \(Command.updateMacOSPackages.cliName) [OPTIONS]",
             requiresValue: false,
             defaultValue:nil)
         static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "UPDATE_MACOS_PACKAGES_\(changeDirectoryOption.envSuffix)"],
@@ -132,7 +137,7 @@ public struct XCHelper : CliRunnable {
                                                      requiresValue:false,
                                                      defaultValue: nil)
         static let recursive          = CliOption(keys:["-r", "--recursive", "UPDATE_PACKAGES_RECURSIVE"],
-                                                  description:"Recursively search subdirectories for .xcodeprojs that need their dependencies updated. If you have a main application project which is not managed by SPM, you can create a subdirectory which is an SPM managed project. Then, use this to update those dependencies from the main project.",
+                                                  description:"Recursively search subdirectories for .xcodeproj files that need their dependencies updated. If you have a main application project which is not managed by SPM, you can create a subdirectory which is an SPM managed project. Then, use this to update those dependencies from the main project.",
                                                   usage: nil,
                                                   requiresValue:false,
                                                   defaultValue: nil)
@@ -142,7 +147,7 @@ public struct XCHelper : CliRunnable {
         //                                                requiresValue:false,
         //                                                defaultValue: nil)
         static let dockerBuildPhase          = CliOption(keys:["-b", "--docker-build-phase", "UPDATE_PACKAGES_DOCKER_BUILD_PHASE"],
-                                                         description:"Add a `docker-build` \"Run Script Phase\" to Xcode. `docker-build` will use the .xcodehelper config file to determine the docker configuration. Run `xchelper docker-build --help` for more details on which options you can include in your .xcodehelper file. ",
+                                                         description:"Add a `docker-build` \"Run Script Phase\" to Xcode. `docker-build` will use the .xcodehelper config file to determine the docker configuration. Run `\(XCHelper.appName) docker-build --help` for more details on which options you can include in your .xcodehelper file. ",
                                                          usage: nil,
                                                          requiresValue:false,
                                                          defaultValue: nil)
@@ -228,7 +233,7 @@ public struct XCHelper : CliRunnable {
     struct updateDockerPackages {
         static let command          = CliOption(keys: [Command.updateDockerPackages.cliName, Command.updateDockerPackages.envName],
                                                 description: Command.updateDockerPackages.description,
-                                                usage: "xchelper \(Command.updateDockerPackages.cliName) [OPTIONS]",
+                                                usage: "\(XCHelper.appName) \(Command.updateDockerPackages.cliName) [OPTIONS]",
             requiresValue: false,
             defaultValue:nil)
         static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "UPDATE_DOCKER_PACKAGES_\(changeDirectoryOption.envSuffix)"],
@@ -275,11 +280,11 @@ public struct XCHelper : CliRunnable {
     struct dockerBuild {
         static let command              = CliOption(keys: [Command.dockerBuild.cliName, Command.dockerBuild.envName],
                                                     description: Command.dockerBuild.description,
-                                                    usage: "xchelper \(Command.dockerBuild.cliName) [OPTIONS]",
+                                                    usage: "\(XCHelper.appName) \(Command.dockerBuild.cliName) [OPTIONS]",
             requiresValue: false,
             defaultValue: nil)
         static let buildOnSuccess       = CliOption(keys: ["-s", "--after-success", "DOCKER_BUILD_AFTER_SUCCESS"],
-                                                    description: "Only build after a successful macOS build. This helps reduce duplicate errors in Xcode from multiple platforms.",
+                                                    description: "Build in docker only build after a successful macOS build. This helps reduce duplicate errors in Xcode from multiple platforms.",
                                                     usage: "-s [PATH_TO_BUILD_DIR] ie: -s /project/path/.build",
                                                     requiresValue: true,
                                                     defaultValue: nil)
@@ -409,7 +414,7 @@ public struct XCHelper : CliRunnable {
     //    struct clean {
     //        static let command              = CliOption(keys: [Command.clean.rawValue, "CLEAN"],
     //                                                    description: "Run swift package --clean on your package.",
-    //                                                    usage: "xchelper clean [OPTIONS]",
+    //                                                    usage: "\(XCHelper.appName) clean [OPTIONS]",
     //                                                    requiresValue: false,
     //                                                    defaultValue:nil)
     //        static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short, changeDirectoryOption.long.rawValue, "CLEAN_\(changeDirectoryOption.envSuffix)"],
@@ -435,7 +440,7 @@ public struct XCHelper : CliRunnable {
     struct symlinkDependencies {
         static let command              = CliOption(keys: [Command.symlinkDependencies.cliName, Command.symlinkDependencies.envName],
                                                     description: Command.symlinkDependencies.description,
-                                                    usage: "xchelper \(Command.symlinkDependencies.cliName) [OPTIONS]",
+                                                    usage: "\(XCHelper.appName) \(Command.symlinkDependencies.cliName) [OPTIONS]",
             requiresValue: false,
             defaultValue:nil)
         static let changeDirectory  = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "SYMLINK_DEPENDENCIES_\(changeDirectoryOption.envSuffix)"],
@@ -461,7 +466,7 @@ public struct XCHelper : CliRunnable {
     struct createArchive {
         static let command              = CliOption(keys: [Command.createArchive.cliName, Command.createArchive.envName],
                                                     description:Command.createArchive.description ,
-                                                    usage: "xchelper \(Command.createArchive.cliName) ARCHIVE_PATH FILES [OPTIONS]. ARCHIVE_PATH the full path and filename for the archive to be created. FILES is a space separated list of full paths to the files you want to archive.",
+                                                    usage: "\(XCHelper.appName) \(Command.createArchive.cliName) ARCHIVE_PATH FILES [OPTIONS]. ARCHIVE_PATH the full path and filename for the archive to be created. FILES is a space separated list of full paths to the files you want to archive.",
             requiresValue: false,
             defaultValue: nil)
         static let flatList   = CliOption(keys:["-f", "--flat-list", "CREATE_ARCHIVE_FLAT_LIST"],
@@ -507,7 +512,7 @@ public struct XCHelper : CliRunnable {
     struct uploadArchive {
         static let command              = CliOption(keys: [Command.uploadArchive.cliName, Command.uploadArchive.envName],
                                                     description: Command.uploadArchive.description,
-                                                    usage: "xchelper \(Command.uploadArchive.cliName) ARCHIVE_PATH [OPTIONS]. ARCHIVE_PATH the path of the archive that you want to upload to S3.",
+                                                    usage: "\(XCHelper.appName) \(Command.uploadArchive.cliName) ARCHIVE_PATH [OPTIONS]. ARCHIVE_PATH the path of the archive that you want to upload to S3.",
             requiresValue: true,
             defaultValue:nil)
         static let bucket               = CliOption(keys:["-b", "--bucket", "UPLOAD_ARCHIVE_S3_BUCKET"],
@@ -578,7 +583,7 @@ public struct XCHelper : CliRunnable {
     struct gitTag {
         static let command              = CliOption(keys: [Command.gitTag.cliName, Command.gitTag.envName],
                                                     description: Command.gitTag.description,
-                                                    usage: "xchelper \(Command.gitTag.cliName) [OPTIONS]",
+                                                    usage: "\(XCHelper.appName) \(Command.gitTag.cliName) [OPTIONS]",
             requiresValue: false,
             defaultValue: nil)
         static let changeDirectory      = CliOption(keys:[changeDirectoryOption.short.rawValue, changeDirectoryOption.long.rawValue, "GIT_TAG_\(changeDirectoryOption.envSuffix)"],
@@ -666,7 +671,7 @@ public struct XCHelper : CliRunnable {
         
         static let command              = CliOption(keys: [Command.createXcarchive.cliName, Command.createXcarchive.envName],
                                                     description: Command.createXcarchive.description,
-                                                    usage: "xchelper \(Command.createXcarchive.cliName) XCARCHIVE_PATH [OPTIONS]. XCARCHIVE_PATH is the directory (.xcarchive) where you want the Info.plist created in. ",
+                                                    usage: "\(XCHelper.appName) \(Command.createXcarchive.cliName) XCARCHIVE_PATH [OPTIONS]. XCARCHIVE_PATH is the directory (.xcarchive) where you want the Info.plist created in. ",
             requiresValue: true,
             defaultValue: nil)
         //        static let nameOption          = CliOption(keys: ["-n", "--name", "CREATE_PLIST_APP_NAME"],

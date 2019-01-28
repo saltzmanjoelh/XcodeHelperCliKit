@@ -106,7 +106,7 @@ public struct XCHelper : CliRunnable {
     public var cliOptionGroups: [CliOptionGroup] {
         get {
             return [CliOptionGroup(description:"Commands:",
-                                   options:[updateMacOsPackagesOption, updateDockerPackagesOption, dockerBuildOption, /*cleanOption,*/ symlinkDependenciesOption, createArchiveOption, uploadArchiveOption, gitTagOption, createXcarchiveOption])]
+                                   options:[updateMacOsPackagesOption, updateDockerPackagesOption, dockerBuildOption, /*cleanOption,*/ symlinkDependenciesOption, createArchiveOption, uploadFileOption, gitTagOption, createXcarchiveOption])]
         }
     }
     public var environmentKeys: [String] {
@@ -132,7 +132,7 @@ public struct XCHelper : CliRunnable {
                                                 requiresValue:true,
                                                 defaultValue:nil)
         static let generateXcodeProject  = CliOption(keys:["-g", "--generate", "UPDATE_PACKAGES_GENERATE_XCPROJECT"],
-                                                     description:"Generate a new Xcode project",
+                                                     description:"Generate a new Xcode project after updating packages.",
                                                      usage: nil,
                                                      requiresValue:false,
                                                      defaultValue: nil)
@@ -147,7 +147,7 @@ public struct XCHelper : CliRunnable {
         //                                                requiresValue:false,
         //                                                defaultValue: nil)
         static let dockerBuildPhase          = CliOption(keys:["-b", "--docker-build-phase", "UPDATE_PACKAGES_DOCKER_BUILD_PHASE"],
-                                                         description:"Add a `docker-build` \"Run Script Phase\" to Xcode. `docker-build` will use the .xcodehelper config file to determine the docker configuration. Run `\(XCHelper.appName) docker-build --help` for more details on which options you can include in your .xcodehelper file. ",
+                                                         description:"Add a `docker-build` \"Run Script Phase\" to Xcode. `docker-build` will use the .xcodehelper config file to determine the docker configuration. Run `\(XCHelper.appName) docker-build --help` for more details on which options you can include in your .xcodehelper file.",
                                                          usage: nil,
                                                          requiresValue:false,
                                                          defaultValue: nil)
@@ -242,14 +242,14 @@ public struct XCHelper : CliRunnable {
                                                 requiresValue:true,
                                                 defaultValue:nil)
         static let imageName        = CliOption(keys:["-i", "--image-name", "UPDATE_DOCKER_PACKAGES_IMAGE_NAME"],
-                                                description:"The Docker image name to run the commands in",
+                                                description:"Name of image to use with Docker when updating packages",
                                                 usage: nil,
                                                 requiresValue:true,
                                                 defaultValue:"swift")
         // The combination of `swift package update` and persistentVolume caused "segmentation fault" and swift compiler crashes
         // For now, when we update packages in Docker we should delete all existing packages first. ie: don't persist Packges directory
         static let volumeName       = CliOption(keys:["-v", "--volume", "UPDATE_DOCKER_PACKAGES_PERSISTENT_VOLUME"],
-                                                description:"Create a subdirectory in the .build directory. This separates the macOS build files from docker build files to make builds faster for each platform.",
+                                                description:"Name of volume to store build artifacts across builds. Create a subdirectory in the .build directory. This separates the macOS build files from docker build files to make builds faster for each platform.",
                                                 usage: "-v [PLATFORM_NAME] ie: -v android",
                                                 requiresValue:true,
                                                 defaultValue: "docker_volume")
@@ -284,12 +284,12 @@ public struct XCHelper : CliRunnable {
             requiresValue: false,
             defaultValue: nil)
         static let buildOnSuccess       = CliOption(keys: ["-s", "--after-success", "DOCKER_BUILD_AFTER_SUCCESS"],
-                                                    description: "Build in docker only build after a successful macOS build. This helps reduce duplicate errors in Xcode from multiple platforms.",
+                                                    description: "Build in docker only build after a successful macOS build. This helps reduce redundant errors from showing in Xcode from multiple platforms.",
                                                     usage: "-s [PATH_TO_BUILD_DIR] ie: -s /project/path/.build",
                                                     requiresValue: true,
                                                     defaultValue: nil)
         static let removeWhenDone       = CliOption(keys: ["-r", "--rm", "DOCKER_REMOVE_WHEN_DONE"],
-                                                    description: "Delete the container after building.",
+                                                    description: "Delete the docker container after building.",
                                                     usage: nil,
                                                     requiresValue: false,
                                                     defaultValue: nil)
@@ -299,17 +299,17 @@ public struct XCHelper : CliRunnable {
                                                     requiresValue: true,
                                                     defaultValue: nil)
         static let buildConfiguration   = CliOption(keys:["-c", "--build-configuration", "DOCKER_BUILD_CONFIGURATION"],
-                                                    description:"debug or release mode",
+                                                    description:"Build configuration to use with `swift build --configuration`. Project defaults to the project's current setting.",
                                                     usage: nil,
                                                     requiresValue: true,
                                                     defaultValue: "debug")
         static let imageName            = CliOption(keys:["-i", "--image-name", "DOCKER_BUILD_IMAGE_NAME"],
-                                                    description:"The Docker image name to run the commands in",
+                                                    description:"Name of image to use with Docker when building.",
                                                     usage: nil,
                                                     requiresValue: true,
                                                     defaultValue: "swift")
         static let containerName  = CliOption(keys:["-n", "--container-name", "DOCKER_BUILD_CONTAINER_NAME"],
-                                              description:"The name of the container. Defaults to the same as the image name.",
+                                              description:"Name of container to use with Docker when building. Defaults to the same as the image name.",
                                               usage: "-n [CONTAINER_NAME] ie: -n android",
                                               requiresValue: true,
                                               defaultValue: "LinuxSwiftContainer")
@@ -466,7 +466,7 @@ public struct XCHelper : CliRunnable {
     struct createArchive {
         static let command              = CliOption(keys: [Command.createArchive.cliName, Command.createArchive.envName],
                                                     description:Command.createArchive.description ,
-                                                    usage: "\(XCHelper.appName) \(Command.createArchive.cliName) ARCHIVE_PATH FILES [OPTIONS]. ARCHIVE_PATH the full path and filename for the archive to be created. FILES is a space separated list of full paths to the files you want to archive.",
+                                                    usage: "\(XCHelper.appName) \(Command.createArchive.cliName) ARCHIVE_PATH FILES [OPTIONS]. Use `tar -cvzf` to archive some files. ARCHIVE_PATH the full path and filename for the archive to be created. FILES is a space separated list of full paths to the files you want to archive.",
             requiresValue: false,
             defaultValue: nil)
         static let flatList   = CliOption(keys:["-f", "--flat-list", "CREATE_ARCHIVE_FLAT_LIST"],
@@ -508,30 +508,30 @@ public struct XCHelper : CliRunnable {
     }
     
     
-    // MARK: UploadArchive
-    struct uploadArchive {
-        static let command              = CliOption(keys: [Command.uploadArchive.cliName, Command.uploadArchive.envName],
-                                                    description: Command.uploadArchive.description,
-                                                    usage: "\(XCHelper.appName) \(Command.uploadArchive.cliName) ARCHIVE_PATH [OPTIONS]. ARCHIVE_PATH the path of the archive that you want to upload to S3.",
+    // MARK: UploadFile
+    struct uploadFile {
+        static let command              = CliOption(keys: [Command.uploadFile.cliName, Command.uploadFile.envName],
+                                                    description: Command.uploadFile.description,
+                                                    usage: "\(XCHelper.appName) \(Command.uploadFile.cliName) ARCHIVE_PATH [OPTIONS]. ARCHIVE_PATH the path of the archive that you want to upload to S3.",
             requiresValue: true,
             defaultValue:nil)
         static let bucket               = CliOption(keys:["-b", "--bucket", "UPLOAD_ARCHIVE_S3_BUCKET"],
-                                                    description:"The bucket that you want to upload your archive to.",
+                                                    description:"S3 bucket name that you want to upload to.",
                                                     usage: nil,
                                                     requiresValue:true,
                                                     defaultValue:nil)
         static let region               = CliOption(keys:["-r", "--region", "UPLOAD_ARCHIVE_S3_REGION"],
-                                                    description:"The bucket's region.",
+                                                    description:"The S3 region that you want to upload to.",
                                                     usage: nil,
                                                     requiresValue:true,
                                                     defaultValue:"us-east-1")
         static let key                  = CliOption(keys:["-k", "--key", "UPLOAD_ARCHIVE_S3_KEY"],
-                                                    description:"The S3 key for the bucket.",
+                                                    description:"The key to the S3 bucket.",
                                                     usage: nil,
                                                     requiresValue:true,
                                                     defaultValue:nil)
         static let secret               = CliOption(keys:["-s", "--secret", "UPLOAD_ARCHIVE_S3_SECRET"],
-                                                    description:"The secret for the key.",
+                                                    description:"The secret to the key of the S3 bucket.",
                                                     usage: nil,
                                                     requiresValue:true,
                                                     defaultValue:nil)
@@ -541,39 +541,39 @@ public struct XCHelper : CliRunnable {
                                                     requiresValue:true,
                                                     defaultValue:nil)
     }
-    public var uploadArchiveOption: CliOption {
-        var uploadArchveOption = uploadArchive.command
-        uploadArchveOption.requiredArguments = [uploadArchive.bucket, uploadArchive.region]//(key,secret) OR credentials check in handler
-        uploadArchveOption.optionalArguments = [uploadArchive.key, uploadArchive.secret, uploadArchive.credentialsFile]
-        uploadArchveOption.action = handleUploadArchive
+    public var uploadFileOption: CliOption {
+        var uploadArchveOption = uploadFile.command
+        uploadArchveOption.requiredArguments = [uploadFile.bucket, uploadFile.region]//(key,secret) OR credentials check in handler
+        uploadArchveOption.optionalArguments = [uploadFile.key, uploadFile.secret, uploadFile.credentialsFile]
+        uploadArchveOption.action = handleUploadFile
         return uploadArchveOption
     }
-    public func handleUploadArchive(option:CliOption) throws {
-        XcodeHelper.logger = Logger(category: Command.uploadArchive.title)
+    public func handleUploadFile(option:CliOption) throws {
+        XcodeHelper.logger = Logger(category: Command.uploadFile.title)
         XcodeHelper.logger?.logWithNotification("Uploading archve")
         
         let argumentIndex = option.argumentIndex
-        guard let archivePath = argumentIndex[uploadArchive.command.keys.first!]?.first else {
-            throw XcodeHelperError.uploadArchive(message: "You didn't provide the path to the archive that you want to upload.")
+        guard let archivePath = argumentIndex[uploadFile.command.keys.first!]?.first else {
+            throw XcodeHelperError.uploadFile(message: "You didn't provide the path to the archive that you want to upload.")
         }
-        guard let bucket = argumentIndex[uploadArchive.bucket.keys.first!]?.first else {
-            throw XcodeHelperError.uploadArchive(message: "You didn't provide the S3 bucket to upload to.")
+        guard let bucket = argumentIndex[uploadFile.bucket.keys.first!]?.first else {
+            throw XcodeHelperError.uploadFile(message: "You didn't provide the S3 bucket to upload to.")
         }
-        guard let region = argumentIndex[uploadArchive.region.keys.first!]?.first else {
-            throw XcodeHelperError.uploadArchive(message: "You didn't provide the region for the bucket.")
+        guard let region = argumentIndex[uploadFile.region.keys.first!]?.first else {
+            throw XcodeHelperError.uploadFile(message: "You didn't provide the region for the bucket.")
         }
         
-        if let key = argumentIndex[uploadArchive.key.keys.first!]?.first {
-            guard let secret = argumentIndex[uploadArchive.secret.keys.first!]?.first else {
-                throw XcodeHelperError.uploadArchive(message: "You didn't provide the secret for the key.")
+        if let key = argumentIndex[uploadFile.key.keys.first!]?.first {
+            guard let secret = argumentIndex[uploadFile.secret.keys.first!]?.first else {
+                throw XcodeHelperError.uploadFile(message: "You didn't provide the secret for the key.")
             }
-            try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, key: key, secret: secret, shouldLog: true)
+            try xcodeHelpable.uploadFile(at: archivePath, to: bucket, in: region, key: key, secret: secret, shouldLog: true)
             
-        } else if let file = argumentIndex[uploadArchive.credentialsFile.keys.first!]?.first {
-            try xcodeHelpable.uploadArchive(at: archivePath, to: bucket, in: region, using: file, shouldLog: true)
+        } else if let file = argumentIndex[uploadFile.credentialsFile.keys.first!]?.first {
+            try xcodeHelpable.uploadFile(at: archivePath, to: bucket, in: region, using: file, shouldLog: true)
             
         } else {
-            throw XcodeHelperError.uploadArchive(message: "You must provide either a credentials file or a key and secret")
+            throw XcodeHelperError.uploadFile(message: "You must provide either a credentials file or a key and secret")
         }
         XcodeHelper.logger?.logWithNotification("Archive uploaded")
     }

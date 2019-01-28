@@ -96,16 +96,16 @@ struct XcodeHelpableFixture: XcodeHelpable {
         return (testCreateArchive?(archivePath, filePaths, flatList))!
     }
     
-    var testUploadArchive: ((String, String, String, String, String) -> Void)?
-    func uploadArchive(at archivePath: String, to s3Bucket: String, in region: String, key: String, secret: String, shouldLog: Bool) throws
+    var testUploadFile: ((String, String, String, String, String) -> Void)?
+    func uploadFile(at archivePath: String, to s3Bucket: String, in region: String, key: String, secret: String, shouldLog: Bool) throws
     {
-        (testUploadArchive?(archivePath, s3Bucket, region, key, secret))
+        (testUploadFile?(archivePath, s3Bucket, region, key, secret))
     }
     
-    var testUploadArchiveWithCredentials: ((String, String, String, String) -> Void)?
-    func uploadArchive(at archivePath: String, to s3Bucket: String, in region: String, using credentialsPath: String, shouldLog: Bool) throws
+    var testUploadFileWithCredentials: ((String, String, String, String) -> Void)?
+    func uploadFile(at archivePath: String, to s3Bucket: String, in region: String, using credentialsPath: String, shouldLog: Bool) throws
     {
-        (testUploadArchiveWithCredentials?(archivePath, s3Bucket, region, credentialsPath))
+        (testUploadFileWithCredentials?(archivePath, s3Bucket, region, credentialsPath))
     }
     
     var testGetGitTag: ((String, Bool) throws -> String)?
